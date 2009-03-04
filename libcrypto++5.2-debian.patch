@@ -1,0 +1,2632 @@
+--- libcrypto++-5.2.1c2a.orig/debian/control
++++ libcrypto++-5.2.1c2a/debian/control
+@@ -0,0 +1,127 @@
++Source: libcrypto++
++Section: libs
++Priority: optional
++Maintainer: Jens Peter Secher <jps@debian.org>
++Uploaders: Pierre Machard <pmachard@debian.org>
++Standards-Version: 3.6.2
++Build-Depends: g++ (>= 4:4.0.2-2), debhelper (>= 4), automake1.9, autoconf (>> 2.50), libtool, dpatch
++Build-Depends-Indep: doxygen
++
++Package: libcrypto++5.2c2a
++Architecture: any
++Section: libs
++Depends: ${shlibs:Depends}
++Conflicts: libcrypto++5.2, libcrypto++5.2c2
++Replaces: libcrypto++5.2, libcrypto++5.2c2
++Description: General purpose cryptographic shared library
++ General purpose cryptographic library for C++ which includes:
++   A class hierarchy with an API defined by abstract base classes,
++   Proposed AES (Rijndael) and other AES candidates,
++   Other symmetric block ciphers,
++   Generic cipher modes,
++   Stream ciphers,
++   Public key cryptography,
++   Padding schemes for public-key systems,
++   Key agreement schemes,
++   Elliptic curve cryptography,
++   One-way hash functions,
++   Message authentication codes,
++   Cipher constructions based on hash functions,
++   Pseudo-random number generators,
++   High level interface for most of the above using a filter/pipeline metaphor,
++   and a whole lot more.
++ .
++ More information can be found at Wei Dei's Crypto++ web site
++ http://www.cryptopp.com
++
++Package: libcrypto++-dev
++Architecture: any
++Section: libdevel
++Depends: libcrypto++5.2c2a (= ${Source-Version})
++Description: General purpose cryptographic C++ library - development
++ General purpose cryptographic C++ library which includes:
++   A class hierarchy with an API defined by abstract base classes,
++   Proposed AES (Rijndael) and other AES candidates,
++   Other symmetric block ciphers,
++   Generic cipher modes,
++   Stream ciphers,
++   Public key cryptography,
++   Padding schemes for public-key systems,
++   Key agreement schemes,
++   Elliptic curve cryptography,
++   One-way hash functions,
++   Message authentication codes,
++   Cipher constructions based on hash functions,
++   Pseudo-random number generators,
++   High level interface for most of the above using a filter/pipeline metaphor,
++   and a whole lot more.
++ .
++ This package contains the header files needed for developing using
++ the Crypto++ class library.  It also includes the static library with
++ libtool supoport, a utility for benchmarking and using the various
++ Crypto++ routines, and finally it includes the test vectors for
++ validating both the Crypto++ implementation and other implementations
++ of these routines.
++ .
++ More information can be found at Wei Dei's Crypto++ web site
++ http://www.cryptopp.com
++
++Package: libcrypto++-utils
++Architecture: any
++Section: utils
++Depends: ${shlibs:Depends}
++Conflicts: libcrypto++-dev (= 5.2.1c2-1)
++Description: General purpose cryptographic library - utilities and data files
++ General purpose cryptographic C++ library which includes:
++   A class hierarchy with an API defined by abstract base classes,
++   Proposed AES (Rijndael) and other AES candidates,
++   Other symmetric block ciphers,
++   Generic cipher modes,
++   Stream ciphers,
++   Public key cryptography,
++   Padding schemes for public-key systems,
++   Key agreement schemes,
++   Elliptic curve cryptography,
++   One-way hash functions,
++   Message authentication codes,
++   Cipher constructions based on hash functions,
++   Pseudo-random number generators,
++   High level interface for most of the above using a filter/pipeline metaphor,
++   and a whole lot more.
++ .
++ This package includes a utility for benchmarking and using the
++ various Crypto++ routines.  It also includes the test vectors for
++ validating both the Crypto++ implementation and other implementations
++ of these routines.
++ .
++ More information can be found at Wei Dei's Crypto++ web site
++ http://www.cryptopp.com
++
++Package: libcrypto++-doc
++Architecture: all
++Section: doc
++Conflicts: libcrypto++-dev (<= 5.2.1c2-3)
++Enhances: libcrypto++-dev
++Description: General purpose cryptographic library - documentation
++ General purpose cryptographic C++ library which includes:
++   A class hierarchy with an API defined by abstract base classes,
++   Proposed AES (Rijndael) and other AES candidates,
++   Other symmetric block ciphers,
++   Generic cipher modes,
++   Stream ciphers,
++   Public key cryptography,
++   Padding schemes for public-key systems,
++   Key agreement schemes,
++   Elliptic curve cryptography,
++   One-way hash functions,
++   Message authentication codes,
++   Cipher constructions based on hash functions,
++   Pseudo-random number generators,
++   High level interface for most of the above using a filter/pipeline metaphor,
++   and a whole lot more.
++ .
++ This package includes the Doxygen-generated reference guide to the
++ source code.
++ .
++ More information can be found at Wei Dei's Crypto++ web site
++ http://www.cryptopp.com
+--- libcrypto++-5.2.1c2a.orig/debian/libcrypto++-utils.install
++++ libcrypto++-5.2.1c2a/debian/libcrypto++-utils.install
+@@ -0,0 +1,3 @@
++usr/bin/cryptest
++usr/share/crypto--/*.dat usr/share/crypto++
++usr/share/crypto--/TestVectors usr/share/crypto++
+--- libcrypto++-5.2.1c2a.orig/debian/rules
++++ libcrypto++-5.2.1c2a/debian/rules
+@@ -0,0 +1,128 @@
++#!/usr/bin/make -f
++# debian/rules for libcrypto++
++
++# The shared library must be the first listed in debian/control
++package := $(firstword $(shell dh_listpackages))
++
++binarypackages := $(filter-out %-doc,$(shell dh_listpackages))
++
++# Use dpath
++include /usr/share/dpatch/dpatch.make
++
++# Setup ./configure arguments to fit Debian environment
++export DEB_HOST_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
++export DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
++config_flags := \
++	--config-cache \
++	--enable-debug \
++	--prefix=/usr \
++	--sysconfdir=/etc \
++	--mandir=/usr/share/man \
++	--infodir=/usr/share/info \
++	--libexecdir=/usr/lib \
++	--build $(DEB_BUILD_GNU_TYPE)
++ifneq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
++	config_flags += --host $(DEB_HOST_GNU_TYPE)
++endif
++
++# For some reason, we suddenly need to mention pthread explicitly.
++export LDFLAGS=-pthread
++
++# Compile options
++cflags := -g -fno-strict-aliasing
++ifeq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
++	cflags += -O2
++else
++	cflags += -O0
++endif
++ifeq (hppa-linux,$(DEB_BUILD_GNU_TYPE))
++	cflags += -ffunction-sections
++endif
++
++autotools_input := configure.ac Makefile.am config.h.in
++
++autoclean:
++	-rm -f a.out aclocal.m4 config.log config.sub config.guess	\
++	configure cryptopp_config.h.in depcomp install-sh ltmain.sh	\
++	Makefile.in missing $(autotools_input)
++
++# Autoreconf needs the automake input to be Makefile.am, so we make
++# sure the upstream GNUmakefile do not shadow the resulting Makefile.
++config-stamp:
++	dh_testdir
++	ln -sf /usr/share/misc/config.sub /usr/share/misc/config.guess .
++	-rm -f config.cache GNUmakefile
++	cp -f $(patsubst %,debian/%,$(autotools_input)) .
++	AUTOMAKE=automake-1.9 ACLOCAL=aclocal-1.9 autoreconf --force --install
++	$(SHELL) ./configure $(config_flags) CFLAGS="$(cflags)" CXXFLAGS="$(cflags)"
++	touch $@
++
++# Build and run the test suite
++build: config-stamp build-stamp
++build-stamp: patch-stamp
++	$(MAKE)
++	./cryptestcwd v
++	touch $@
++
++# Let Doxygen generate the documentation
++html: config-stamp html-stamp
++html-stamp: patch-stamp
++	$(MAKE) html
++	touch $@
++
++# Put everything of interest in debian/tmp
++install-stamp: build
++	dh_testdir
++	dh_testroot
++	dh_clean -k
++	$(MAKE) install DESTDIR=$(PWD)/debian/tmp
++	rm -f debian/tmp/usr/bin/cryptestcwd
++	cp -r TestVectors debian/tmp/usr/share/crypto--
++	touch $@
++
++binary-indep: html
++	dh_testdir
++	dh_testroot
++	dh_installdocs -plibcrypto++-doc -X.hhc -X.hhp -X.hhk
++	dh_installchangelogs -plibcrypto++-doc 
++	dh_compress -plibcrypto++-doc 
++	dh_fixperms -plibcrypto++-doc 
++	dh_installdeb -plibcrypto++-doc 
++	dh_gencontrol -plibcrypto++-doc 
++	dh_md5sums -plibcrypto++-doc 
++	dh_builddeb -plibcrypto++-doc 
++
++binaryargs := $(patsubst %,-p%,$(binarypackages))
++
++binary-arch: install-stamp
++	dh_testdir
++	dh_testroot
++	dh_installdocs $(binaryargs)
++	dh_install --list-missing --sourcedir=$(PWD)/debian/tmp $(binaryargs)
++	dh_installchangelogs $(binaryargs)
++	dh_installman -plibcrypto++-utils debian/cryptest.1
++	dh_installexamples -plibcrypto++-dev test.cpp
++	dh_strip $(binaryargs)
++	dh_compress $(binaryargs)
++	dh_link $(binaryargs)
++	dh_fixperms $(binaryargs)
++	dh_makeshlibs $(binaryargs)
++	dh_installdeb $(binaryargs)
++	dh_shlibdeps -L$(package) -ldebian/$(package)/usr/lib
++	dh_gencontrol $(binaryargs)
++	dh_md5sums $(binaryargs)
++	dh_builddeb $(binaryargs)
++
++binary:	binary-indep binary-arch
++
++clean: clean-patched unpatch autoclean
++clean-patched:
++	dh_testdir
++	dh_testroot
++	-rm -f *-stamp
++	-$(MAKE) distclean
++	-rm -rf doc
++	dh_clean
++
++.PHONY: autoclean binary binary-indep binary-arch bootstrap build	\
++	clean clean-patched html
+--- libcrypto++-5.2.1c2a.orig/debian/changelog
++++ libcrypto++-5.2.1c2a/debian/changelog
+@@ -0,0 +1,228 @@
++libcrypto++ (5.2.1c2a-3) unstable; urgency=low
++
++  * Patch source so that it compiles with GCC 4.1 .  More specifically,
++    avoid mixing implicit calls to base classes and free-standing
++    functions.
++    (Closes: #356170).
++  * Use LDFLAGS=-pthread to fix linking errors.
++
++ -- Jens Peter Secher <jps@debian.org>  Thu, 16 Mar 2006 23:08:48 +0100
++
++libcrypto++ (5.2.1c2a-2) unstable; urgency=low
++
++  * Build-depend on a version of g++ that fixes PR c++/21123 which
++    resulted in internal compiler errors on m68k, arm, and hppa
++    (Closes: #343003).
++  * Include an override to stop Lintian complaining about the name of the
++    shared library.
++  * Removed link in main headline of Doxygen generated documentaion since
++    Doxygen insists on escaping it.
++
++ -- Jens Peter Secher <jps@debian.org>  Tue, 13 Dec 2005 20:40:25 +0100
++
++libcrypto++ (5.2.1c2a-1) unstable; urgency=low
++
++  * Rebuild and name change due to libstdc++6 mt-allocator transition 
++    (Closes: #339201).
++
++ -- Jens Peter Secher <jps@debian.org>  Sat, 19 Nov 2005 23:56:27 +0100
++
++libcrypto++ (5.2.1c2-8) unstable; urgency=low
++
++  * Force autoreconf to use automake1.9 so that it is possible to have
++    several automake versions installed.
++
++ -- Jens Peter Secher <jps@debian.org>  Sat,  1 Oct 2005 16:11:18 +0200
++
++libcrypto++ (5.2.1c2-7) unstable; urgency=low
++
++  * Use the upstream-provided way of doing manual template instantiation
++    on architectures where it is necessary to use GCC3.4.
++
++ -- Jens Peter Secher <jps@debian.org>  Mon, 26 Sep 2005 19:08:30 +0200
++
++libcrypto++ (5.2.1c2-6) unstable; urgency=low
++
++  * Circumvent GCC4 internal compiler error on m68k, arm, and hppa by
++    using GCC3.4 on those architectures, thanks to Adeodato Simó 
++    (Closes: #328975).
++
++ -- Jens Peter Secher <jps@debian.org>  Tue, 20 Sep 2005 20:46:29 +0200
++
++libcrypto++ (5.2.1c2-5) unstable; urgency=low
++
++  * Fixed the debian/rules so that the binary-arch target can be built in
++    isolation (Closes: #323161).
++  * Added a doc-base file for the libcrypto++-doc package.
++
++ -- Jens Peter Secher <jps@debian.org>  Mon, 15 Aug 2005 22:18:05 +0200
++
++libcrypto++ (5.2.1c2-4) unstable; urgency=low
++
++  * Really take care of endianess this time by letting config.status
++    manipulate config.h .
++  * Split the documentation into a libcrypto++-doc package.
++
++ -- Jens Peter Secher <jps@debian.org>  Wed, 10 Aug 2005 23:47:51 +0200
++
++libcrypto++ (5.2.1c2-3) unstable; urgency=low
++
++  * Take care of architecture endianess by using AC_C_BIGENDIAN in
++    configure.ac .  Should fix building for s390 and mipsel.
++
++ -- Jens Peter Secher <jps@debian.org>  Mon,  8 Aug 2005 21:25:50 +0200
++
++libcrypto++ (5.2.1c2-2) unstable; urgency=low
++
++  * Stopped including autotools generated scripts, and instead
++    build-depends on automaken to avoid strange problems with libtool that
++    causes problems for the build daemons.
++  * Fix cryptest so that it always can find its data files, and put it in
++    the libcrypto++-utils package again.
++
++ -- Jens Peter Secher <jps@debian.org>  Sat,  6 Aug 2005 16:34:56 +0200
++
++libcrypto++ (5.2.1c2-1) unstable; urgency=low
++
++  * New maintainer (Closes: #288433).  
++  * Complete re-autotoolising of the package to retain pristine upstream
++    source and to only build-depend on libtool.
++  * The crypto++-util package has been merged into the crypto++-dev
++    package and is thus dead.
++  * Applied patches from Ben Hutchings to avoid compile warnings
++    (Closes: #286114).
++  * Circumvented anonymous-enum and template-instantiations problems with
++    GCC 4.  Thanks to Florian Weimer and Jozef Matula for guiding me in
++    the right direction (Closes: #318518).
++  * Started using dpatch since some of the above patches probably could
++    make it upstream.
++  
++ -- Jens Peter Secher <jps@debian.org>  Sun, 31 Jul 2005 02:07:29 +0200
++
++libcrypto++ (5.2.1a-1) unstable; urgency=high
++
++  * Urgency set to high because lastest upload was unclean
++  * Rename libcrypto++-5.2.1.orig.tar.gz in  libcrypto++-5.2.1a.orig.tar.gz
++  
++ -- Pierre Machard <pmachard@debian.org>  Fri, 27 Aug 2004 12:35:05 +0200
++
++libcrypto++ (5.2.1-2) unstable; urgency=high
++
++  * Added TestVectors to example dir
++  * Add symlink from cryptopp_config.h to config.h (closes: #244980)
++  * Hack configure.in to fit with new upstream version. This hack is
++    far from being complete and quite uggly.
++  * Update manpage
++  * Automaticaly update config.{sub,guess}
++
++ -- Pierre Machard <pmachard@debian.org>  Sat, 21 Aug 2004 08:59:37 +0200
++
++libcrypto++ (5.2.1-1) unstable; urgency=high
++
++  * Adding myself as package uploaders
++  * Urgency set to high because of #244892
++  * New upstream release (closes: #244892, #247922, #245921, #261074)
++
++ -- Pierre Machard <pmachard@debian.org>  Fri, 20 Aug 2004 05:22:28 +0200
++
++libcrypto++ (5.1-5) unstable; urgency=low
++
++  * Remove the final arch specific (rather than feature specifc) tests in
++    crypto_config.h,
++  Closes: #238220
++  * Add symlinks libcrypto++.{a,la,so} pointing to
++    libcrypto++5.1.{a,la,so} so that users can act like the ABI of this
++    library doesn't change with every major release,
++  Closes: #241148
++
++ -- Stephen Zander <gibreel@debian.org>  Mon, 19 Apr 2004 18:10:28 -0700
++
++libcrypto++ (5.1-4) unstable; urgency=low
++
++  * Build with -fno-strict-aliasing.  This should fix the segfaults on
++    non-i386 architectures.
++  * Add -ffunction-sections for hppa build,
++  Closes: #238220
++
++ -- Stephen Zander <gibreel@debian.org>  Fri, 19 Mar 2004 02:06:08 -0800
++
++libcrypto++ (5.1-3) unstable; urgency=low
++
++  * Move datatest.cpp from libcrypto++5.1.so to the cryptest source to
++    really fix the GlobalRNG bug,
++  Closes: #236539
++
++ -- Stephen Zander <gibreel@debian.org>  Sun, 14 Mar 2004 20:23:16 -0800
++
++libcrypto++ (5.1-2) unstable; urgency=low
++
++  * Remove validate.h from the libcrypto++5.1.so headers; it should only
++    be used by cryptest,
++  Closes: #236539
++  * Include test.cpp as an example of how to invoke the various Crypto++
++    routines,
++  Closes: #236844
++  * Allow cryptest to look for validation files in the current directory
++    as well as /usr/share/crypto++,
++  Closes: #236968
++
++ -- Stephen Zander <gibreel@debian.org>  Sat, 13 Mar 2004 00:59:54 -0800
++
++libcrypto++ (5.1-1) unstable; urgency=low
++
++  * Drop the gcc-3.2 dependency as gcc-3.2 should be everywhere by now.  This
++    also fixes the build failure on ARM.
++  * Rename the library from libcrypto++.so.5 to libcrypto++5.1.so.0 as
++    upstream does not maintain binary compatibility and having the 5.1
++    package provide libcrypto++.so.6 strikes me as too confusing.
++  * New upstream version,
++  Closes: #213953
++  * Include full paths to data files used by the cryptest validation
++    routines,
++  Closes: #198696
++  * Add MD4 to the output of 'cryptest b' and segregate the hashing
++    algorithms from the encryption algorithms,
++  Closes: #198698
++  * Include Doxygen generated documents in the libcrypto++-dev package,
++  Closes: #211725
++
++ -- Stephen Zander <gibreel@debian.org>  Tue, 17 Feb 2004 12:41:29 -0800
++
++libcrypto++ (5.0-3) unstable; urgency=low
++
++  * Add generic 64bit arch support, rather than hard-coded alpha supoprt,
++  Closes: #181457
++
++ -- Stephen Zander <gibreel@debian.org>  Sat, 15 Mar 2003 17:47:27 -0800
++
++libcrypto++ (5.0-2) unstable; urgency=low
++
++  * Convert the gcc-3.2 build depends to a g++-3.2, they way it should be
++  Closes: #175085
++  * Clean up cryptlib.h slightly so it's not so noisy under -Wall,
++  Closes: #175180
++
++ -- Stephen Zander <gibreel@debian.org>  Tue,  7 Jan 2003 01:24:07 -0800
++
++libcrypto++ (5.0-1) unstable; urgency=low
++
++  * Package moved to main.
++  * New upstream version,
++  Closes: #174217
++  * All files now have appropriate copyright entries and debian/copyright
++    accurately reflects the contents of this package,
++  Closes: #153926
++  * cryptest now successfully runs to completion,
++  Closes: #153929
++  * Fix a typo in the cryptest manpage,
++  Closes: #153932
++
++ -- Stephen Zander <gibreel@debian.org>  Fri, 27 Dec 2002 11:23:06 -0800
++
++libcrypto++ (4.2-1) unstable; urgency=low
++
++  * New package,
++  Closes: #79131
++
++ -- Stephen Zander <gibreel@debian.org>  Fri,  5 Jul 2002 09:45:26 -0700
++
+--- libcrypto++-5.2.1c2a.orig/debian/configure.ac
++++ libcrypto++-5.2.1c2a/debian/configure.ac
+@@ -0,0 +1,42 @@
++# -*- autoconf -*-
++# Process this file with autoconf to produce a configure script.
++
++AC_INIT([Crypto++], [5.2], [libcrypto++@bugs.debian.org])
++AC_CONFIG_SRCDIR([cryptlib.h])
++AC_CONFIG_HEADERS([cryptopp_config.h])
++AC_CONFIG_HEADERS([config.h])
++AM_INIT_AUTOMAKE([foreign])
++AM_MAINTAINER_MODE
++
++# Checks for programs.
++AC_PROG_CXX
++AC_PROG_CC
++AC_PROG_LN_S
++AC_PROG_LIBTOOL
++
++# Checks for header files.
++AC_HEADER_STDC
++AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h malloc.h netdb.h netinet/in.h stddef.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
++
++# Checks for typedefs, structures, and compiler characteristics.
++AC_HEADER_STDBOOL
++AC_C_CONST
++AC_C_INLINE
++AC_TYPE_SIZE_T
++AC_HEADER_TIME
++AC_CHECK_TYPES([ptrdiff_t])
++AC_C_BIGENDIAN(
++	AC_DEFINE(IS_BIG_ENDIAN, [], [Big-endian architecture]),
++	AC_DEFINE(IS_LITTLE_ENDIAN, [], [Little-endian architecture]),
++	AC_MSG_ERROR([Can't tell endianess of platform]))
++
++# Checks for library functions.
++AC_PROG_GCC_TRADITIONAL
++AC_FUNC_MALLOC
++AC_FUNC_MEMCMP
++AC_FUNC_SELECT_ARGTYPES
++AC_TYPE_SIGNAL
++AC_CHECK_FUNCS([gethostbyname gettimeofday memmove memset pow select socket])
++
++AC_CONFIG_FILES([Makefile])
++AC_OUTPUT
+--- libcrypto++-5.2.1c2a.orig/debian/libcrypto++-doc.docs
++++ libcrypto++-5.2.1c2a/debian/libcrypto++-doc.docs
+@@ -0,0 +1 @@
++doc/html/
+--- libcrypto++-5.2.1c2a.orig/debian/libcrypto++-dev.links
++++ libcrypto++-5.2.1c2a/debian/libcrypto++-dev.links
+@@ -0,0 +1,3 @@
++/usr/lib/libcrypto++5.2.a  /usr/lib/libcrypto++.a
++/usr/lib/libcrypto++5.2.la /usr/lib/libcrypto++.la
++/usr/lib/libcrypto++5.2.so /usr/lib/libcrypto++.so
+--- libcrypto++-5.2.1c2a.orig/debian/libcrypto++-doc.doc-base
++++ libcrypto++-5.2.1c2a/debian/libcrypto++-doc.doc-base
+@@ -0,0 +1,10 @@
++Document: libcrypto++
++Title: Crypto++ library reference manual
++Author: Wei Dai
++Abstract: Reference manual for the general purpose cryptographic library
++ Crypto++ for the C++ language.
++Section: Apps/Programming
++
++Format: HTML
++Index: /usr/share/doc/libcrypto++-doc/html/index.html
++Files: /usr/share/doc/libcrypto++-doc/html/*.html
+--- libcrypto++-5.2.1c2a.orig/debian/lintian-overrides
++++ libcrypto++-5.2.1c2a/debian/lintian-overrides
+@@ -0,0 +1 @@
++libcrypto++5.2c2a binary: package-name-doesnt-match-sonames libcrypto++5.2-0
+--- libcrypto++-5.2.1c2a.orig/debian/compat
++++ libcrypto++-5.2.1c2a/debian/compat
+@@ -0,0 +1 @@
++4
+--- libcrypto++-5.2.1c2a.orig/debian/cryptest.1
++++ libcrypto++-5.2.1c2a/debian/cryptest.1
+@@ -0,0 +1,93 @@
++.TH cryptest 1 local
++.SH NAME
++cryptest \- Test Driver for Crypto++, a C++ Class Library of Cryptographic Primitives
++.SH SYNOPSIS
++.B cryptest 
++[\fIOPTION\fR]
++.SH DESCRIPTION
++cryptest takes the following options
++.TP
++.B g
++generate an RSA key
++.TP
++.B h
++display usage information
++.TP
++.B r
++encrypt and decrypt a string using RSA
++.TP
++.BI rs " privatekeyfile messagefile signaturefile"
++sign a file using RSA
++.TP
++.BI rv " publickeyfile messagefile signaturefile"
++verify a signature of a file using RSA
++.TP
++.BI m " file"
++calculate MD5, SHA, and RIPEMD-160 message digests
++.TP
++.B t
++encrypt and decrypt a string using DES-EDE in CBC mode 
++.TP
++.BI e|d " input output"
++encrypt or decrypt a file
++.TP
++.BI ss " <threshold> <number-of-shares> file"
++secret share a file (shares will be named file.000, file.001, etc)
++.TP
++.BI sr " file share1 share2 [....]"
++reconstruct a secret-shared file (number of shares given must be equal
++to threshold)
++.TP
++.BI id " <threshold> <number-of-shares> file"
++information disperse a file (shares will be named file.000, file.001, etc)
++.TP
++.BI ir " file share1 share2 [....]"
++reconstruct an information-dispersed file (number of shares given must
++be equal to threshold)
++.TP
++.BI z " <compression-level> input output"
++gzip a file
++.TP
++.BI u " input output"
++gunzip a file
++.TP
++.BI ae " input output"
++encrypt a file with AES in CTR mode
++.TP
++.BI e64 " input output"
++base64 encode a file
++.TP
++.BI d64 " input output"
++base64 decode a file
++.TP
++.BI e16 " input output"
++hex encode a file
++.TP
++.BI d16 " input output"
++hex decode a file
++.TP
++.BI ft " source-port destination-host destination-port"
++forward a TCP connection
++.TP
++.BI fips
++run the FIPS 140-2 sample application
++.TP
++.BI fips-rand
++generate 100000 random files using FIPS Approved X.917 RNG
++.TP
++.BI mt " input"
++run Maurer's randomness test on a file
++.TP
++.B v
++run validation tests
++.TP
++.BI b " [time for each benchmark in seconds]"
++run benchmarks
++.TP
++.BI tv " filename"
++run test vector file (available in TestVectors example subdirectory)
++.SH AUTHOR
++This man page was created by Stephen Zander <gibreel@debian.org> and
++Pierre Machard <pmachard@debian.org> for
++the Debian distribution.  It is licenced under the same terms as the
++rest of the Crypto++ library, written by Wei Dai.
+--- libcrypto++-5.2.1c2a.orig/debian/Makefile.am
++++ libcrypto++-5.2.1c2a/debian/Makefile.am
+@@ -0,0 +1,335 @@
++## Process this file with automake to produce Makefile.in
++
++# Build two versions of cryptest, one that uses data files from the
++# current working directory, and one that uses data files from
++# /usr/share/crypto++.
++bin_PROGRAMS = cryptest cryptestcwd
++cryptest_CXXFLAGS = -DPACKAGE_DATA_DIR='"/usr/share/crypto++/"'
++cryptest_SOURCES = \
++	bench.cpp \
++	bench2.cpp \
++	datatest.cpp \
++	dlltest.cpp \
++	test.cpp \
++	validat1.cpp \
++	validat2.cpp \
++	validat3.cpp
++cryptest_LDADD = libcrypto++5.2.la
++cryptestcwd_CXXFLAGS = -DPACKAGE_DATA_DIR='""'
++cryptestcwd_SOURCES = \
++	bench.cpp \
++	bench2.cpp \
++	datatest.cpp \
++	dlltest.cpp \
++	test.cpp \
++	validat1.cpp \
++	validat2.cpp \
++	validat3.cpp
++cryptestcwd_LDADD = libcrypto++5.2.la
++
++lib_LTLIBRARIES = libcrypto++5.2.la
++libcrypto__5_2_la_LDFLAGS = -version-info 0:0:0
++libcrypto__5_2_la_SOURCES = \
++	3way.cpp \
++	adler32.cpp \
++	algebra.cpp \
++	algparam.cpp \
++	arc4.cpp \
++	asn.cpp	\
++	base32.cpp \
++	base64.cpp \
++	basecode.cpp \
++	bfinit.cpp \
++	blowfish.cpp \
++	blumshub.cpp \
++	camellia.cpp \
++	cast.cpp \
++	casts.cpp \
++	cbcmac.cpp \
++	channels.cpp \
++	crc.cpp \
++	cryptlib.cpp \
++	default.cpp \
++	des.cpp \
++	dessp.cpp \
++	dh.cpp \
++	dh2.cpp \
++	dll.cpp \
++	dsa.cpp \
++	ec2n.cpp \
++	eccrypto.cpp \
++	ecp.cpp \
++	elgamal.cpp \
++	eprecomp.cpp \
++	esign.cpp \
++	files.cpp \
++	filters.cpp \
++	fips140.cpp \
++	fipsalgt.cpp \
++	fipstest.cpp \
++	gf256.cpp \
++	gf2_32.cpp \
++	gf2n.cpp \
++	gfpcrypt.cpp \
++	gost.cpp \
++	gzip.cpp \
++	haval.cpp \
++	hex.cpp \
++	hmac.cpp \
++	hrtimer.cpp \
++	ida.cpp \
++	idea.cpp \
++	integer.cpp \
++	iterhash.cpp \
++	luc.cpp \
++	mars.cpp \
++	marss.cpp \
++	md2.cpp \
++	md4.cpp \
++	md5.cpp \
++	md5mac.cpp \
++	misc.cpp \
++	modes.cpp \
++	modexppc.cpp \
++	mqueue.cpp \
++	mqv.cpp \
++	nbtheory.cpp \
++	network.cpp \
++	oaep.cpp \
++	osrng.cpp \
++	panama.cpp \
++	pch.cpp \
++	pkcspad.cpp \
++	polynomi.cpp \
++	pssr.cpp \
++	pubkey.cpp \
++	queue.cpp \
++	rabin.cpp \
++	randpool.cpp \
++	rc2.cpp \
++	rc5.cpp \
++	rc6.cpp \
++	rdtables.cpp \
++	regtest.cpp \
++	rijndael.cpp \
++	ripemd.cpp \
++	rng.cpp \
++	rsa.cpp \
++	rw.cpp \
++	safer.cpp \
++	shacal2.cpp \
++	seal.cpp \
++	serpent.cpp \
++	sha.cpp \
++	shark.cpp \
++	sharkbox.cpp \
++	simple.cpp \
++	skipjack.cpp \
++	socketft.cpp \
++	square.cpp \
++	squaretb.cpp \
++	strciphr.cpp \
++	tea.cpp \
++	tftables.cpp \
++	tiger.cpp \
++	tigertab.cpp \
++	trdlocal.cpp \
++	ttmac.cpp \
++	twofish.cpp \
++	wait.cpp \
++	wake.cpp \
++	whrlpool.cpp \
++	winpipes.cpp \
++	xtr.cpp \
++	xtrcrypt.cpp \
++	zdeflate.cpp \
++	zinflate.cpp \
++	zlib.cpp
++
++pkginclude_HEADERS = \
++	3way.h \
++	adler32.h \
++	aes.h \
++	algebra.h \
++	algparam.h \
++	arc4.h \
++	argnames.h \
++	asn.h \
++	base32.h \
++	base64.h \
++	basecode.h \
++	bench.h \
++	blowfish.h \
++	blumshub.h \
++	camellia.h \
++	cast.h \
++	cbcmac.h \
++	channels.h \
++	config.h \
++	crc.h \
++	cryptlib.h \
++	default.h \
++	des.h \
++	dh.h \
++	dh2.h \
++	dll.h \
++	dmac.h \
++	dsa.h \
++	ec2n.h \
++	eccrypto.h \
++	ecp.h \
++	elgamal.h \
++	eprecomp.h \
++	esign.h \
++	factory.h \
++	files.h \
++	filters.h \
++	fips140.h \
++	fltrimpl.h \
++	gf256.h \
++	gf2_32.h \
++	gf2n.h \
++	gfpcrypt.h \
++	gost.h \
++	gzip.h \
++	haval.h \
++	hex.h \
++	hmac.h \
++	hrtimer.h \
++	ida.h \
++	idea.h \
++	integer.h \
++	iterhash.h \
++	lubyrack.h \
++	luc.h \
++	mars.h \
++	md2.h \
++	md4.h \
++	md5.h \
++	md5mac.h \
++	mdc.h \
++	misc.h \
++	modarith.h \
++	modes.h	 \
++	modexppc.h \
++	mqueue.h \
++	mqv.h \
++	nbtheory.h \
++	network.h \
++	nr.h \
++	oaep.h \
++	oids.h \
++	osrng.h \
++	panama.h \
++	pch.h \
++	pkcspad.h \
++	polynomi.h \
++	pssr.h \
++	pubkey.h \
++	pwdbased.h \
++	queue.h \
++	rabin.h \
++	randpool.h \
++	rc2.h \
++	rc5.h \
++	rc6.h \
++	rijndael.h \
++	ripemd.h \
++	rng.h \
++	rsa.h \
++	rw.h \
++	safer.h \
++	shacal2.h \
++	seal.h \
++	secblock.h \
++	seckey.h \
++	serpent.h \
++	sha.h \
++	shark.h \
++	simple.h \
++	skipjack.h \
++	smartptr.h \
++	socketft.h \
++	square.h \
++	stdcpp.h \
++	strciphr.h \
++	tea.h \
++	tiger.h \
++	trdlocal.h \
++	trunhash.h \
++	ttmac.h \
++	twofish.h \
++	wait.h \
++	wake.h \
++	whrlpool.h \
++	winpipes.h \
++	words.h \
++	xormac.h \
++	xtr.h \
++	xtrcrypt.h \
++	zdeflate.h \
++	zinflate.h \
++	zlib.h
++
++pkgdata_DATA = \
++	3desval.dat \
++	3wayval.dat \
++	camellia.dat \
++	cast128v.dat \
++	cast256v.dat \
++	descert.dat \
++	dh1024.dat \
++	dh2048.dat \
++	dlie1024.dat \
++	dlie2048.dat \
++	dsa1024.dat \
++	dsa1024b.dat \
++	dsa512.dat \
++	elgc1024.dat \
++	esig1023.dat \
++	esig1536.dat \
++	esig2046.dat \
++	gostval.dat \
++	havalcer.dat \
++	ideaval.dat \
++	luc1024.dat \
++	luc2048.dat \
++	lucc1024.dat \
++	lucc512.dat \
++	lucd1024.dat \
++	lucd512.dat \
++	lucs1024.dat \
++	lucs512.dat \
++	marsval.dat \
++	mqv1024.dat \
++	mqv2048.dat \
++	nr1024.dat \
++	nr2048.dat \
++	rabi1024.dat \
++	rabi2048.dat \
++	rc2val.dat \
++	rc5val.dat \
++	rc6val.dat \
++	rijndael.dat \
++	rsa1024.dat \
++	rsa2048.dat \
++	rsa400pb.dat \
++	rsa400pv.dat \
++	rsa512a.dat \
++	rw1024.dat \
++	rw2048.dat \
++	saferval.dat \
++	serpentv.dat \
++	shacal2v.dat \
++	sharkval.dat \
++	skipjack.dat \
++	squareva.dat \
++	twofishv.dat \
++	usage.dat \
++	xtrdh171.dat \
++	xtrdh342.dat
++
++htmldir = $(datadir)/html
++
++html: $(libcrypto__5_2_la_SOURCES)
++	doxygen
+--- libcrypto++-5.2.1c2a.orig/debian/config.h.in
++++ libcrypto++-5.2.1c2a/debian/config.h.in
+@@ -0,0 +1,296 @@
++#ifndef CRYPTOPP_CONFIG_H
++#define CRYPTOPP_CONFIG_H
++
++// ***************** Important Settings ********************
++
++// Endianness
++#undef IS_BIG_ENDIAN
++#undef IS_LITTLE_ENDIAN
++
++// define this if you want to disable all OS-dependent features,
++// such as sockets and OS-provided random number generators
++// #define NO_OS_DEPENDENCE
++
++// Define this to use features provided by Microsoft's CryptoAPI.
++// Currently the only feature used is random number generation.
++// This macro will be ignored if NO_OS_DEPENDENCE is defined.
++#define USE_MS_CRYPTOAPI
++
++// Define this to 1 to enforce the requirement in FIPS 186-2 Change Notice 1 that only 1024 bit moduli be used
++#ifndef DSA_1024_BIT_MODULUS_ONLY
++#	define DSA_1024_BIT_MODULUS_ONLY 1
++#endif
++
++// ***************** Less Important Settings ***************
++
++// define this to retain (as much as possible) old deprecated function and class names
++// #define CRYPTOPP_MAINTAIN_BACKWARDS_COMPATIBILITY
++
++#define GZIP_OS_CODE 0
++
++// Try this if your CPU has 256K internal cache or a slow multiply instruction
++// and you want a (possibly) faster IDEA implementation using log tables
++// #define IDEA_LARGECACHE
++
++// Define this if, for the linear congruential RNG, you want to use
++// the original constants as specified in S.K. Park and K.W. Miller's
++// CACM paper.
++// #define LCRNG_ORIGINAL_NUMBERS
++
++// choose which style of sockets to wrap (mostly useful for cygwin which has both)
++#define PREFER_BERKELEY_STYLE_SOCKETS
++// #define PREFER_WINDOWS_STYLE_SOCKETS
++
++// ***************** Important Settings Again ********************
++// But the defaults should be ok.
++
++// namespace support is now required
++#ifdef NO_NAMESPACE
++#	error namespace support is now required
++#endif
++
++// Define this to workaround a Microsoft CryptoAPI bug where
++// each call to CryptAcquireContext causes a 100 KB memory leak.
++// Defining this will cause Crypto++ to make only one call to CryptAcquireContext.
++#define WORKAROUND_MS_BUG_Q258000
++
++#ifdef CRYPTOPP_DOXYGEN_PROCESSING
++// Avoid putting "CryptoPP::" in front of everything in Doxygen output
++#	define CryptoPP
++#	define NAMESPACE_BEGIN(x)
++#	define NAMESPACE_END
++// Get Doxygen to generate better documentation for these typedefs
++#	define DOCUMENTED_TYPEDEF(x, y) class y : public x {};
++#else
++#	define NAMESPACE_BEGIN(x) namespace x {
++#	define NAMESPACE_END }
++#	define DOCUMENTED_TYPEDEF(x, y) typedef x y;
++#endif
++#define ANONYMOUS_NAMESPACE_BEGIN namespace {
++#define USING_NAMESPACE(x) using namespace x;
++#define DOCUMENTED_NAMESPACE_BEGIN(x) namespace x {
++#define DOCUMENTED_NAMESPACE_END }
++
++// What is the type of the third parameter to bind?
++// For Unix, the new standard is ::socklen_t (typically unsigned int), and the old standard is int.
++// Unfortunately there is no way to tell whether or not socklen_t is defined.
++// To work around this, TYPE_OF_SOCKLEN_T is a macro so that you can change it from the makefile.
++#ifndef TYPE_OF_SOCKLEN_T
++#	if defined(_WIN32) || defined(__CYGWIN__) || defined(__MACH__)
++#		define TYPE_OF_SOCKLEN_T int
++#	else
++#		define TYPE_OF_SOCKLEN_T ::socklen_t
++#	endif
++#endif
++
++#if defined(__CYGWIN__) && defined(PREFER_WINDOWS_STYLE_SOCKETS)
++#	define __USE_W32_SOCKETS
++#endif
++
++typedef unsigned char byte;		// put in global namespace to avoid ambiguity with other byte typedefs
++
++NAMESPACE_BEGIN(CryptoPP)
++
++typedef unsigned short word16;
++typedef unsigned int word32;
++
++#if defined(__GNUC__) || defined(__MWERKS__)
++	#define WORD64_AVAILABLE
++	typedef unsigned long long word64;
++	#define W64LIT(x) x##LL
++#elif defined(_MSC_VER) || defined(__BCPLUSPLUS__)
++	#define WORD64_AVAILABLE
++	typedef unsigned __int64 word64;
++	#define W64LIT(x) x##ui64
++#endif
++
++// define largest word type
++#ifdef WORD64_AVAILABLE
++	typedef word64 lword;
++#else
++	typedef word32 lword;
++#endif
++
++#if defined(__alpha__) || defined(__ia64__) || defined(_ARCH_PPC64) || defined(__x86_64__) || defined(__mips64)
++	// These platforms have 64-bit CPU registers. Unfortunately most C++ compilers doesn't
++	// allow any way to access the 64-bit by 64-bit multiply instruction without using
++	// assembly, so in order to use word64 as word, the assembly instruction must be defined
++	// in Dword::Multiply().
++	typedef word32 hword;
++	typedef word64 word;
++#else
++	#define CRYPTOPP_NATIVE_DWORD_AVAILABLE
++	#ifdef WORD64_AVAILABLE
++		#define CRYPTOPP_SLOW_WORD64 // defined this if your CPU is not 64-bit to use alternative code that avoids word64
++		typedef word16 hword;
++		typedef word32 word;
++		typedef word64 dword;
++	#else
++		typedef word8 hword;
++		typedef word16 word;
++		typedef word32 dword;
++	#endif
++#endif
++
++const unsigned int WORD_SIZE = sizeof(word);
++const unsigned int WORD_BITS = WORD_SIZE * 8;
++
++#if defined(_MSC_VER) || defined(__BCPLUSPLUS__)
++	#define INTEL_INTRINSICS
++	#define FAST_ROTATE
++#elif defined(__MWERKS__) && TARGET_CPU_PPC
++	#define PPC_INTRINSICS
++	#define FAST_ROTATE
++#elif defined(__GNUC__) && defined(__i386__)
++	// GCC does peephole optimizations which should result in using rotate instructions
++	#define FAST_ROTATE
++#endif
++
++NAMESPACE_END
++
++// VC60 workaround: it doesn't allow typename in some places
++#if defined(_MSC_VER) && (_MSC_VER < 1300)
++#define CPP_TYPENAME
++#else
++#define CPP_TYPENAME typename
++#endif
++
++#ifdef _MSC_VER
++#define CRYPTOPP_NO_VTABLE __declspec(novtable)
++#else
++#define CRYPTOPP_NO_VTABLE
++#endif
++
++#ifdef _MSC_VER
++	// 4231: nonstandard extension used : 'extern' before template explicit instantiation
++	// 4250: dominance
++	// 4251: member needs to have dll-interface
++	// 4275: base needs to have dll-interface
++	// 4660: explicitly instantiating a class that's already implicitly instantiated
++	// 4661: no suitable definition provided for explicit template instantiation request
++	// 4786: identifer was truncated in debug information
++	// 4355: 'this' : used in base member initializer list
++#	pragma warning(disable: 4231 4250 4251 4275 4660 4661 4786 4355)
++#endif
++
++#if (defined(_MSC_VER) && _MSC_VER <= 1300) || defined(__MWERKS__) || defined(_STLPORT_VERSION)
++#define CRYPTOPP_DISABLE_UNCAUGHT_EXCEPTION
++#endif
++
++#ifndef CRYPTOPP_DISABLE_UNCAUGHT_EXCEPTION
++#define CRYPTOPP_UNCAUGHT_EXCEPTION_AVAILABLE
++#endif
++
++// CodeWarrior defines _MSC_VER
++#if !defined(CRYPTOPP_DISABLE_X86ASM) && ((defined(_MSC_VER) && !defined(__MWERKS__) && defined(_M_IX86)) || (defined(__GNUC__) && defined(__i386__)))
++#define CRYPTOPP_X86ASM_AVAILABLE
++#endif
++
++// ***************** determine availability of OS features ********************
++
++#ifndef NO_OS_DEPENDENCE
++
++#if defined(_WIN32) || defined(__CYGWIN__)
++#define CRYPTOPP_WIN32_AVAILABLE
++#endif
++
++#if defined(__unix__) || defined(__MACH__)
++#define CRYPTOPP_UNIX_AVAILABLE
++#endif
++
++#if defined(WORD64_AVAILABLE) && (defined(CRYPTOPP_WIN32_AVAILABLE) || defined(CRYPTOPP_UNIX_AVAILABLE))
++#	define HIGHRES_TIMER_AVAILABLE
++#endif
++
++#ifdef CRYPTOPP_UNIX_AVAILABLE
++#	define HAS_BERKELEY_STYLE_SOCKETS
++#endif
++
++#ifdef CRYPTOPP_WIN32_AVAILABLE
++#	define HAS_WINDOWS_STYLE_SOCKETS
++#endif
++
++#if defined(HIGHRES_TIMER_AVAILABLE) && (defined(HAS_BERKELEY_STYLE_SOCKETS) || defined(HAS_WINDOWS_STYLE_SOCKETS))
++#	define SOCKETS_AVAILABLE
++#endif
++
++#if defined(HAS_WINDOWS_STYLE_SOCKETS) && (!defined(HAS_BERKELEY_STYLE_SOCKETS) || defined(PREFER_WINDOWS_STYLE_SOCKETS))
++#	define USE_WINDOWS_STYLE_SOCKETS
++#else
++#	define USE_BERKELEY_STYLE_SOCKETS
++#endif
++
++#if defined(CRYPTOPP_WIN32_AVAILABLE) && !defined(USE_BERKELEY_STYLE_SOCKETS)
++#	define WINDOWS_PIPES_AVAILABLE
++#endif
++
++#if defined(CRYPTOPP_WIN32_AVAILABLE) && defined(USE_MS_CRYPTOAPI)
++#	define NONBLOCKING_RNG_AVAILABLE
++#	define OS_RNG_AVAILABLE
++#endif
++
++#if defined(CRYPTOPP_UNIX_AVAILABLE) || defined(CRYPTOPP_DOXYGEN_PROCESSING)
++#	define NONBLOCKING_RNG_AVAILABLE
++#	define BLOCKING_RNG_AVAILABLE
++#	define OS_RNG_AVAILABLE
++#	define HAS_PTHREADS
++#	define THREADS_AVAILABLE
++#endif
++
++#ifdef CRYPTOPP_WIN32_AVAILABLE
++#	define HAS_WINTHREADS
++#	define THREADS_AVAILABLE
++#endif
++
++#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
++#	define CRYPTOPP_MALLOC_ALIGNMENT_IS_16
++#endif
++
++#if defined(__linux__) || defined(__sun__) || defined(__CYGWIN__)
++#	define CRYPTOPP_MEMALIGN_AVAILABLE
++#endif
++
++#endif	// NO_OS_DEPENDENCE
++
++// ***************** DLL related ********************
++
++#ifdef CRYPTOPP_WIN32_AVAILABLE
++
++#ifdef CRYPTOPP_EXPORTS
++#define CRYPTOPP_IS_DLL
++#define CRYPTOPP_DLL __declspec(dllexport)
++#elif defined(CRYPTOPP_IMPORTS)
++#define CRYPTOPP_IS_DLL
++#define CRYPTOPP_DLL __declspec(dllimport)
++#else
++#define CRYPTOPP_DLL
++#endif
++
++#define CRYPTOPP_API __stdcall
++#define CRYPTOPP_CDECL __cdecl
++
++#else	// CRYPTOPP_WIN32_AVAILABLE
++
++#define CRYPTOPP_DLL
++#define CRYPTOPP_API
++#define CRYPTOPP_CDECL
++
++#endif	// CRYPTOPP_WIN32_AVAILABLE
++
++#if defined(CRYPTOPP_MANUALLY_INSTANTIATE_TEMPLATES) && !defined(CRYPTOPP_IMPORTS)
++#define CRYPTOPP_DLL_TEMPLATE_CLASS template class CRYPTOPP_DLL
++#elif defined(__MWERKS__)
++#define CRYPTOPP_DLL_TEMPLATE_CLASS extern class CRYPTOPP_DLL
++#else
++#define CRYPTOPP_DLL_TEMPLATE_CLASS extern template class CRYPTOPP_DLL
++#endif
++
++#if defined(CRYPTOPP_MANUALLY_INSTANTIATE_TEMPLATES) && !defined(CRYPTOPP_EXPORTS)
++#define CRYPTOPP_STATIC_TEMPLATE_CLASS template class
++#elif defined(__MWERKS__)
++#define CRYPTOPP_STATIC_TEMPLATE_CLASS extern class
++#else
++#define CRYPTOPP_STATIC_TEMPLATE_CLASS extern template class
++#endif
++
++#endif
+--- libcrypto++-5.2.1c2a.orig/debian/libcrypto++-dev.install
++++ libcrypto++-5.2.1c2a/debian/libcrypto++-dev.install
+@@ -0,0 +1,2 @@
++usr/include/crypto--/*.h usr/include/crypto++
++usr/lib/*.{a,la,so}
+--- libcrypto++-5.2.1c2a.orig/debian/patches/20_gcc41_compile_fixes.dpatch
++++ libcrypto++-5.2.1c2a/debian/patches/20_gcc41_compile_fixes.dpatch
+@@ -0,0 +1,254 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 20_gcc41_compile_fixes.dpatch by Jens Peter Secher <jps@debian.org>
++##
++## DP: Avoid mixing implicit calls to base classes and free-standing functions
++## DP: as required by GCC 4.1's stricter C++-standard interpretation.
++
++@DPATCH@
++diff -urNad libcrypto++-5.2.1c2a~/camellia.h libcrypto++-5.2.1c2a/camellia.h
++--- libcrypto++-5.2.1c2a~/camellia.h	2006-03-30 22:16:07.000000000 +0200
+++++ libcrypto++-5.2.1c2a/camellia.h	2006-03-30 22:24:26.571391544 +0200
++@@ -22,7 +22,7 @@
++ /// <a href="http://www.weidai.com/scan-mirror/cs.html#Camellia">Camellia</a>
++ class Camellia : public Camellia_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<Camellia_Info>
+++	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<Camellia_Info>, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void UncheckedSetKey(CipherDir dir, const byte *key, unsigned int keylen);
++diff -urNad libcrypto++-5.2.1c2a~/cast.h libcrypto++-5.2.1c2a/cast.h
++--- libcrypto++-5.2.1c2a~/cast.h	2006-03-30 22:11:41.000000000 +0200
+++++ libcrypto++-5.2.1c2a/cast.h	2006-03-30 22:20:54.862576176 +0200
++@@ -24,7 +24,7 @@
++ /// <a href="http://www.weidai.com/scan-mirror/cs.html#CAST-128">CAST-128</a>
++ class CAST128 : public CAST128_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_NO_VTABLE Base : public CAST, public BlockCipherImpl<CAST128_Info>
+++	class CRYPTOPP_NO_VTABLE Base : public CAST, public BlockCipherImpl<CAST128_Info>, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void UncheckedSetKey(CipherDir direction, const byte *userKey, unsigned int length);
++@@ -60,7 +60,7 @@
++ //! <a href="http://www.weidai.com/scan-mirror/cs.html#CAST-256">CAST-256</a>
++ class CAST256 : public CAST256_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_NO_VTABLE Base : public CAST, public BlockCipherImpl<CAST256_Info>
+++	class CRYPTOPP_NO_VTABLE Base : public CAST, public BlockCipherImpl<CAST256_Info>, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void UncheckedSetKey(CipherDir direction, const byte *userKey, unsigned int length = 8);
++diff -urNad libcrypto++-5.2.1c2a~/des.h libcrypto++-5.2.1c2a/des.h
++--- libcrypto++-5.2.1c2a~/des.h	2006-03-30 22:10:52.000000000 +0200
+++++ libcrypto++-5.2.1c2a/des.h	2006-03-30 22:19:16.287561856 +0200
++@@ -35,7 +35,7 @@
++ 	check or correct the parity bits if you wish. */
++ class DES : public DES_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<DES_Info>, public RawDES
+++	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<DES_Info>, public RawDES, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void ProcessAndXorBlock(const byte *inBlock, const byte *xorBlock, byte *outBlock) const;
++@@ -60,7 +60,7 @@
++ /// <a href="http://www.weidai.com/scan-mirror/cs.html#DESede">DES-EDE2</a>
++ class DES_EDE2 : public DES_EDE2_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_DLL CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<DES_EDE2_Info>
+++	class CRYPTOPP_DLL CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<DES_EDE2_Info>, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void UncheckedSetKey(CipherDir direction, const byte *userKey, unsigned int length);
++@@ -84,7 +84,7 @@
++ /// <a href="http://www.weidai.com/scan-mirror/cs.html#DESede">DES-EDE3</a>
++ class DES_EDE3 : public DES_EDE3_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_DLL CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<DES_EDE3_Info>
+++	class CRYPTOPP_DLL CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<DES_EDE3_Info>, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void UncheckedSetKey(CipherDir dir, const byte *key, unsigned int length);
++@@ -108,7 +108,7 @@
++ /// <a href="http://www.weidai.com/scan-mirror/cs.html#DESX">DES-XEX3</a>, AKA DESX
++ class DES_XEX3 : public DES_XEX3_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<DES_XEX3_Info>
+++	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<DES_XEX3_Info>, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void UncheckedSetKey(CipherDir dir, const byte *key, unsigned int length);
++diff -urNad libcrypto++-5.2.1c2a~/gost.h libcrypto++-5.2.1c2a/gost.h
++--- libcrypto++-5.2.1c2a~/gost.h	2006-03-30 22:12:49.000000000 +0200
+++++ libcrypto++-5.2.1c2a/gost.h	2006-03-30 22:21:23.530218032 +0200
++@@ -18,7 +18,7 @@
++ /// <a href="http://www.weidai.com/scan-mirror/cs.html#GOST">GOST</a>
++ class GOST : public GOST_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<GOST_Info>
+++	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<GOST_Info>, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void UncheckedSetKey(CipherDir direction, const byte *userKey, unsigned int length);
++diff -urNad libcrypto++-5.2.1c2a~/hmac.h libcrypto++-5.2.1c2a/hmac.h
++--- libcrypto++-5.2.1c2a~/hmac.h	2006-03-30 22:13:07.000000000 +0200
+++++ libcrypto++-5.2.1c2a/hmac.h	2006-03-30 22:21:40.231679024 +0200
++@@ -9,7 +9,7 @@
++ NAMESPACE_BEGIN(CryptoPP)
++ 
++ //! _
++-class CRYPTOPP_DLL CRYPTOPP_NO_VTABLE HMAC_Base : public VariableKeyLength<16, 0, UINT_MAX>, public MessageAuthenticationCode
+++class CRYPTOPP_DLL CRYPTOPP_NO_VTABLE HMAC_Base : public VariableKeyLength<16, 0, UINT_MAX>, public MessageAuthenticationCode, public SimpledKeyed_Helper
++ {
++ public:
++ 	HMAC_Base() : m_innerHashKeyed(false) {}
++diff -urNad libcrypto++-5.2.1c2a~/lubyrack.h libcrypto++-5.2.1c2a/lubyrack.h
++--- libcrypto++-5.2.1c2a~/lubyrack.h	2006-03-30 22:16:27.000000000 +0200
+++++ libcrypto++-5.2.1c2a/lubyrack.h	2006-03-30 22:24:44.584653112 +0200
++@@ -23,7 +23,7 @@
++ template <class T>
++ class LR : public LR_Info<T>, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<LR_Info<T> >
+++	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<LR_Info<T> >, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		// VC60 workaround: have to define these functions within class definition
++diff -urNad libcrypto++-5.2.1c2a~/mars.h libcrypto++-5.2.1c2a/mars.h
++--- libcrypto++-5.2.1c2a~/mars.h	2006-03-30 22:15:11.000000000 +0200
+++++ libcrypto++-5.2.1c2a/mars.h	2006-03-30 22:23:34.148361056 +0200
++@@ -18,7 +18,7 @@
++ /// <a href="http://www.weidai.com/scan-mirror/cs.html#MARS">MARS</a>
++ class MARS : public MARS_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<MARS_Info>
+++	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<MARS_Info>, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void UncheckedSetKey(CipherDir direction, const byte *userKey, unsigned int length);
++diff -urNad libcrypto++-5.2.1c2a~/md5mac.h libcrypto++-5.2.1c2a/md5mac.h
++--- libcrypto++-5.2.1c2a~/md5mac.h	2006-03-30 22:10:18.000000000 +0200
+++++ libcrypto++-5.2.1c2a/md5mac.h	2006-03-30 22:18:25.064348968 +0200
++@@ -9,7 +9,7 @@
++ 
++ NAMESPACE_BEGIN(CryptoPP)
++ 
++-class CRYPTOPP_NO_VTABLE MD5MAC_Base : public FixedKeyLength<16>, public IteratedHash<word32, LittleEndian, 64, MessageAuthenticationCode>
+++class CRYPTOPP_NO_VTABLE MD5MAC_Base : public FixedKeyLength<16>, public IteratedHash<word32, LittleEndian, 64, MessageAuthenticationCode>, public SimpledKeyed_Helper
++ {
++ public:
++ 	static std::string StaticAlgorithmName() {return "MD5-MAC";}
++diff -urNad libcrypto++-5.2.1c2a~/mdc.h libcrypto++-5.2.1c2a/mdc.h
++--- libcrypto++-5.2.1c2a~/mdc.h	2006-03-30 22:11:22.000000000 +0200
+++++ libcrypto++-5.2.1c2a/mdc.h	2006-03-30 22:20:01.639667288 +0200
++@@ -23,7 +23,7 @@
++ template <class T>
++ class MDC : public MDC_Info<T>
++ {
++-	class CRYPTOPP_NO_VTABLE Enc : public BlockCipherImpl<MDC_Info<T> >
+++	class CRYPTOPP_NO_VTABLE Enc : public BlockCipherImpl<MDC_Info<T> >, public SimpledKeyed_Helper
++ 	{
++ 		typedef typename T::HashWordType HashWordType;
++ 
++diff -urNad libcrypto++-5.2.1c2a~/rijndael.h libcrypto++-5.2.1c2a/rijndael.h
++--- libcrypto++-5.2.1c2a~/rijndael.h	2006-03-30 22:13:23.000000000 +0200
+++++ libcrypto++-5.2.1c2a/rijndael.h	2006-03-30 22:21:58.852848176 +0200
++@@ -18,7 +18,7 @@
++ /// <a href="http://www.weidai.com/scan-mirror/cs.html#Rijndael">Rijndael</a>
++ class CRYPTOPP_DLL Rijndael : public Rijndael_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_DLL CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<Rijndael_Info>
+++	class CRYPTOPP_DLL CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<Rijndael_Info>, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void UncheckedSetKey(CipherDir direction, const byte *userKey, unsigned int length);
++diff -urNad libcrypto++-5.2.1c2a~/seckey.h libcrypto++-5.2.1c2a/seckey.h
++--- libcrypto++-5.2.1c2a~/seckey.h	2006-03-30 22:14:48.000000000 +0200
+++++ libcrypto++-5.2.1c2a/seckey.h	2006-03-30 22:22:59.546621320 +0200
++@@ -123,19 +123,21 @@
++ 
++ // ************** implementation helper for SimpledKeyed ***************
++ 
++-template <class T>
++-static inline void CheckedSetKey(T *obj, Empty empty, const byte *key, unsigned int length, const NameValuePairs &param)
++-{
++-	obj->ThrowIfInvalidKeyLength(length);
++-	obj->UncheckedSetKey(key, length);
++-}
+++struct SimpledKeyed_Helper {
+++	template <class T>
+++	static inline void CheckedSetKey(T *obj, Empty empty, const byte *key, unsigned int length, const NameValuePairs &param)
+++	{
+++		obj->ThrowIfInvalidKeyLength(length);
+++		obj->UncheckedSetKey(key, length);
+++	}
++ 
++-template <class T>
++-static inline void CheckedSetKey(T *obj, CipherDir dir, const byte *key, unsigned int length, const NameValuePairs &param)
++-{
++-	obj->ThrowIfInvalidKeyLength(length);
++-	obj->UncheckedSetKey(dir, key, length);
++-}
+++	template <class T>
+++	static inline void CheckedSetKey(T *obj, CipherDir dir, const byte *key, unsigned int length, const NameValuePairs &param)
+++	{
+++		obj->ThrowIfInvalidKeyLength(length);
+++		obj->UncheckedSetKey(dir, key, length);
+++	}
+++};
++ 
++ //! _
++ template <class BASE, class INFO = BASE>
++@@ -176,7 +178,7 @@
++ 
++ 	void SetKey(const byte *key, unsigned int length, const NameValuePairs &param = g_nullNameValuePairs)
++ 	{
++-		CheckedSetKey(this, DIR, key, length, param);
+++		BASE::CheckedSetKey(this, DIR, key, length, param);
++ 	}
++ };
++ 
++@@ -187,7 +189,7 @@
++ public:
++ 	void SetKey(const byte *key, unsigned int length, const NameValuePairs &params = g_nullNameValuePairs)
++ 	{
++-		CheckedSetKey(this, Empty(), key, length, params);
+++		BASE::CheckedSetKey(this, Empty(), key, length, params);
++ 	}
++ };
++ 
++diff -urNad libcrypto++-5.2.1c2a~/shacal2.h libcrypto++-5.2.1c2a/shacal2.h
++--- libcrypto++-5.2.1c2a~/shacal2.h	2006-03-30 22:12:08.000000000 +0200
+++++ libcrypto++-5.2.1c2a/shacal2.h	2006-03-30 22:20:21.364668632 +0200
++@@ -18,7 +18,7 @@
++ /// <a href="http://www.weidai.com/scan-mirror/cs.html#SHACAL-2">SHACAL-2</a>
++ class SHACAL2 : public SHACAL2_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<SHACAL2_Info>
+++	class CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<SHACAL2_Info>, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void UncheckedSetKey(CipherDir direction, const byte *userKey, unsigned int length);
++diff -urNad libcrypto++-5.2.1c2a~/skipjack.h libcrypto++-5.2.1c2a/skipjack.h
++--- libcrypto++-5.2.1c2a~/skipjack.h	2006-03-30 22:15:57.000000000 +0200
+++++ libcrypto++-5.2.1c2a/skipjack.h	2006-03-30 22:24:12.637509816 +0200
++@@ -18,7 +18,7 @@
++ /// <a href="http://www.weidai.com/scan-mirror/cs.html#SKIPJACK">SKIPJACK</a>
++ class SKIPJACK : public SKIPJACK_Info, public BlockCipherDocumentation
++ {
++-	class CRYPTOPP_DLL CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<SKIPJACK_Info>
+++	class CRYPTOPP_DLL CRYPTOPP_NO_VTABLE Base : public BlockCipherImpl<SKIPJACK_Info>, public SimpledKeyed_Helper
++ 	{
++ 	public:
++ 		void UncheckedSetKey(CipherDir direction, const byte *userKey, unsigned int length);
++diff -urNad libcrypto++-5.2.1c2a~/ttmac.h libcrypto++-5.2.1c2a/ttmac.h
++--- libcrypto++-5.2.1c2a~/ttmac.h	2006-03-30 22:15:29.000000000 +0200
+++++ libcrypto++-5.2.1c2a/ttmac.h	2006-03-30 22:23:46.370503008 +0200
++@@ -9,7 +9,7 @@
++ NAMESPACE_BEGIN(CryptoPP)
++ 
++ //! _
++-class CRYPTOPP_NO_VTABLE TTMAC_Base : public FixedKeyLength<20>, public IteratedHash<word32, LittleEndian, 64, MessageAuthenticationCode>
+++class CRYPTOPP_NO_VTABLE TTMAC_Base : public FixedKeyLength<20>, public IteratedHash<word32, LittleEndian, 64, MessageAuthenticationCode>, public SimpledKeyed_Helper
++ {
++ public:
++ 	static std::string StaticAlgorithmName() {return std::string("Two-Track-MAC");}
+--- libcrypto++-5.2.1c2a.orig/debian/patches/60_reorder_member_initialiser.dpatch
++++ libcrypto++-5.2.1c2a/debian/patches/60_reorder_member_initialiser.dpatch
+@@ -0,0 +1,43 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 60_reorder_member_initialiser.dpatch by Ben Hutchings <ben@decadentplace.org.uk>
++##
++## DP: Reorder member initialisers.
++
++@DPATCH@
++diff -urNad libcrypto++-5.2.1a/iterhash.h /tmp/dpep.UDZXMq/libcrypto++-5.2.1a/iterhash.h
++--- libcrypto++-5.2.1a/iterhash.h	2004-08-20 14:58:33.000000000 +0200
+++++ /tmp/dpep.UDZXMq/libcrypto++-5.2.1a/iterhash.h	2005-02-25 00:01:31.510371584 +0100
++@@ -15,7 +15,7 @@
++ public:
++ 	typedef T HashWordType;
++ 
++-	IteratedHashBase() : m_countHi(0), m_countLo(0) {}
+++	IteratedHashBase() : m_countLo(0), m_countHi(0) {}
++ 	unsigned int BlockSize() const {return m_data.size() * sizeof(T);}
++ 	unsigned int OptimalBlockSize() const {return BlockSize();}
++ 	unsigned int OptimalDataAlignment() const {return sizeof(T);}
++diff -urNad libcrypto++-5.2.1a/network.cpp /tmp/dpep.UDZXMq/libcrypto++-5.2.1a/network.cpp
++--- libcrypto++-5.2.1a/network.cpp	2004-08-18 18:40:08.000000000 +0200
+++++ /tmp/dpep.UDZXMq/libcrypto++-5.2.1a/network.cpp	2005-02-25 00:02:25.872107344 +0100
++@@ -37,8 +37,8 @@
++ 
++ NetworkSource::NetworkSource(BufferedTransformation *attachment)
++ 	: NonblockingSource(attachment), m_buf(1024*16)
++-	, m_waitingForResult(false), m_outputBlocked(false)
++ 	, m_dataBegin(0), m_dataEnd(0)
+++	, m_waitingForResult(false), m_outputBlocked(false)
++ {
++ }
++ 
++diff -urNad libcrypto++-5.2.1a/socketft.cpp /tmp/dpep.UDZXMq/libcrypto++-5.2.1a/socketft.cpp
++--- libcrypto++-5.2.1a/socketft.cpp	2004-08-18 18:40:08.000000000 +0200
+++++ /tmp/dpep.UDZXMq/libcrypto++-5.2.1a/socketft.cpp	2005-02-25 00:03:10.554314616 +0100
++@@ -429,7 +429,7 @@
++ #ifdef USE_BERKELEY_STYLE_SOCKETS
++ 
++ SocketReceiver::SocketReceiver(Socket &s)
++-	: m_s(s), m_lastResult(0), m_eofReceived(false)
+++	: m_s(s), m_eofReceived(false), m_lastResult(0)
++ {
++ }
++ 
+--- libcrypto++-5.2.1c2a.orig/debian/patches/75_doxygen_main_link.dpatch
++++ libcrypto++-5.2.1c2a/debian/patches/75_doxygen_main_link.dpatch
+@@ -0,0 +1,18 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 75_doxygen_main_link.dpatch by Jens Peter Secher <jps@debian.org>
++##
++## DP: Include the link to the main page as HTML.
++
++@DPATCH@
++diff -urNad libcrypto++-5.2.1c2a~/cryptlib.h libcrypto++-5.2.1c2a/cryptlib.h
++--- libcrypto++-5.2.1c2a~/cryptlib.h	2004-07-21 19:09:46.000000000 +0200
+++++ libcrypto++-5.2.1c2a/cryptlib.h	2005-12-13 22:55:52.000000000 +0100
++@@ -4,7 +4,7 @@
++ 	classes that provide a uniform interface to this library.
++ */
++ 
++-/*!	\mainpage <a href="http://www.cryptopp.com">Crypto++</a><sup><small>TM</small></sup> Library 5.2.1 Reference Manual
+++/*!	\mainpage Crypto++ Library 5.2.1 Reference Manual
++ <dl>
++ <dt>Abstract Base Classes<dd>
++ 	cryptlib.h
+--- libcrypto++-5.2.1c2a.orig/debian/patches/50_unused_variables.dpatch
++++ libcrypto++-5.2.1c2a/debian/patches/50_unused_variables.dpatch
+@@ -0,0 +1,29 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 50_unused_variables.dpatch by Ben Hutchings <ben@decadentplace.org.uk>
++##
++## DP: Remove unused variables.
++
++@DPATCH@
++diff -urNad libcrypto++-5.2.1a/files.cpp /tmp/dpep.toBquB/libcrypto++-5.2.1a/files.cpp
++--- libcrypto++-5.2.1a/files.cpp	2004-08-18 18:40:08.000000000 +0200
+++++ /tmp/dpep.toBquB/libcrypto++-5.2.1a/files.cpp	2005-02-24 23:56:47.346571048 +0100
++@@ -116,7 +116,6 @@
++ 		return 0;	// don't try to seek beyond the end of file
++ 	}
++ 	m_stream->seekg(newPosition);
++-	unsigned long total = 0;
++ 	try
++ 	{
++ 		assert(!m_waiting);
++diff -urNad libcrypto++-5.2.1a/pubkey.h /tmp/dpep.toBquB/libcrypto++-5.2.1a/pubkey.h
++--- libcrypto++-5.2.1a/pubkey.h	2004-08-20 14:58:33.000000000 +0200
+++++ /tmp/dpep.toBquB/libcrypto++-5.2.1a/pubkey.h	2005-02-24 23:57:43.642012840 +0100
++@@ -1074,7 +1074,7 @@
++ protected:
++ 	void RestartMessageAccumulator(RandomNumberGenerator &rng, PK_MessageAccumulatorBase &ma) const
++ 	{
++-		const DL_ElgamalLikeSignatureAlgorithm<T> &alg = this->GetSignatureAlgorithm();
+++		this->GetSignatureAlgorithm();
++ 		const DL_GroupParameters<T> &params = this->GetAbstractGroupParameters();
++ 		ma.m_k.Randomize(rng, 1, params.GetSubgroupOrder()-1);
++ 		ma.m_presignature.New(params.GetEncodedElementSize(false));
+--- libcrypto++-5.2.1c2a.orig/debian/patches/10_gcc4_compile_fixes.dpatch
++++ libcrypto++-5.2.1c2a/debian/patches/10_gcc4_compile_fixes.dpatch
+@@ -0,0 +1,61 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 10_gcc4_compile-fixes.dpatch by Jens Peter Secher <jps@debian.org>
++##
++## DP: Avoid problems with anonymous types, see also
++## DP: http://gcc.gnu.org/bugzilla/show_bug.cgi?id=20589 .
++
++@DPATCH@
++diff -urNad --exclude=CVS --exclude=.svn ./iterhash.h /tmp/dpep-work.kJMPta/libcrypto++-5.2.1/iterhash.h
++--- ./iterhash.h	2005-07-31 01:37:41.000000000 +0200
+++++ /tmp/dpep-work.kJMPta/libcrypto++-5.2.1/iterhash.h	2005-07-31 01:38:39.100001152 +0200
++@@ -88,7 +88,7 @@
++ 	: public ClonableImpl<T_Transform, AlgorithmImpl<IteratedHash<T_HashWordType, T_Endianness, T_BlockSize>, T_Transform> >
++ {
++ public:
++-	enum {DIGESTSIZE = T_DigestSize};
+++	enum GCC4FIX2 {DIGESTSIZE = T_DigestSize};
++ 	unsigned int DigestSize() const {return DIGESTSIZE;};
++ 
++ protected:
++diff -urNad --exclude=CVS --exclude=.svn ./lubyrack.h /tmp/dpep-work.kJMPta/libcrypto++-5.2.1/lubyrack.h
++--- ./lubyrack.h	2005-07-31 01:37:41.000000000 +0200
+++++ /tmp/dpep-work.kJMPta/libcrypto++-5.2.1/lubyrack.h	2005-07-31 01:38:39.101001000 +0200
++@@ -38,7 +38,7 @@
++ 		}
++ 
++ 	protected:
++-		enum {S=T::DIGESTSIZE};
+++		enum GCC4FIX4 {S=T::DIGESTSIZE};
++ 		unsigned int L;	// key length / 2
++ 		SecByteBlock key;
++ 
++diff -urNad --exclude=CVS --exclude=.svn ./seckey.h /tmp/dpep-work.kJMPta/libcrypto++-5.2.1/seckey.h
++--- ./seckey.h	2005-07-31 01:37:41.000000000 +0200
+++++ /tmp/dpep-work.kJMPta/libcrypto++-5.2.1/seckey.h	2005-07-31 01:40:04.980945264 +0200
++@@ -21,7 +21,7 @@
++ class FixedBlockSize
++ {
++ public:
++-	enum {BLOCKSIZE = N};
+++	enum GCC4FIX0 {BLOCKSIZE = N};
++ };
++ 
++ // ************** rounds ***************
++@@ -31,7 +31,7 @@
++ class FixedRounds
++ {
++ public:
++-	enum {ROUNDS = R};
+++	enum GCC4FIX1 {ROUNDS = R};
++ 
++ protected:
++ 	template <class T>
++@@ -50,7 +50,7 @@
++ class VariableRounds
++ {
++ public:
++-	enum {DEFAULT_ROUNDS = D, MIN_ROUNDS = N, MAX_ROUNDS = M};
+++	enum GCC4FIX3 {DEFAULT_ROUNDS = D, MIN_ROUNDS = N, MAX_ROUNDS = M};
++ 	static unsigned int StaticGetDefaultRounds(unsigned int keylength) {return DEFAULT_ROUNDS;}
++ 
++ protected:
+--- libcrypto++-5.2.1c2a.orig/debian/patches/80_assertion_unused_variable.dpatch
++++ libcrypto++-5.2.1c2a/debian/patches/80_assertion_unused_variable.dpatch
+@@ -0,0 +1,18 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 80_assertion_unused_variable.dpatch by Ben Hutchings <ben@decadentplace.org.uk>
++##
++## DP: Change assertion macro to avoid defining unused variables.
++
++@DPATCH@
++diff -urNad libcrypto++-5.2.1a/misc.h /tmp/dpep.Aa2sob/libcrypto++-5.2.1a/misc.h
++--- libcrypto++-5.2.1a/misc.h	2004-08-20 14:58:33.000000000 +0200
+++++ /tmp/dpep.Aa2sob/libcrypto++-5.2.1a/misc.h	2005-02-25 00:11:29.952394568 +0100
++@@ -22,7 +22,7 @@
++ #if defined(CRYPTOPP_EXPORTS) || defined(CRYPTOPP_IMPORTS)
++ #define CRYPTOPP_COMPILE_ASSERT_INSTANCE(assertion, instance)
++ #else
++-#define CRYPTOPP_COMPILE_ASSERT_INSTANCE(assertion, instance) static CompileAssert<(assertion)> CRYPTOPP_ASSERT_JOIN(cryptopp_assert_, instance)
+++#define CRYPTOPP_COMPILE_ASSERT_INSTANCE(assertion, instance) typedef CompileAssert<(assertion)> CRYPTOPP_ASSERT_JOIN(cryptopp_assert_, instance)
++ #endif
++ #define CRYPTOPP_ASSERT_JOIN(X, Y) CRYPTOPP_DO_ASSERT_JOIN(X, Y)
++ #define CRYPTOPP_DO_ASSERT_JOIN(X, Y) X##Y
+--- libcrypto++-5.2.1c2a.orig/debian/patches/30_types_and_casts.dpatch
++++ libcrypto++-5.2.1c2a/debian/patches/30_types_and_casts.dpatch
+@@ -0,0 +1,137 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 30_types_and_casts.dpatch by Ben Hutchings <ben@decadentplace.org.uk>
++##                           and Jens Peter Secher <jps@debian.org>
++##
++## DP: Change types of variables and introduce static casts.
++
++@DPATCH@
++--- libcrypto++-5.2.1a/esign.cpp	2004-08-18 18:40:08.000000000 +0200
+++++ /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/esign.cpp	2005-02-24 23:33:18.594733880 +0100
++@@ -114,7 +114,7 @@
++ 
++ 	m_n = m_p * m_p * m_q;
++ 
++-	assert(m_n.BitCount() == modulusSize);
+++	assert(m_n.BitCount() == static_cast<unsigned>(modulusSize));
++ }
++ 
++ void InvertibleESIGNFunction::BERDecode(BufferedTransformation &bt)
++diff -urNad libcrypto++-5.2.1a/fltrimpl.h /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/fltrimpl.h
++--- libcrypto++-5.2.1a/fltrimpl.h	2004-08-20 14:58:33.000000000 +0200
+++++ /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/fltrimpl.h	2005-02-24 23:38:35.493557936 +0100
++@@ -34,7 +34,7 @@
++ 	}
++ 
++ #define FILTER_OUTPUT(site, output, length, messageEnd)	\
++-	FILTER_OUTPUT2(site, 0, output, length, messageEnd)
+++	FILTER_OUTPUT2(site, ((void)0), output, length, messageEnd)
++ 
++ #define FILTER_OUTPUT_BYTE(site, output)	\
++ 	FILTER_OUTPUT(site, &(const byte &)(byte)output, 1, 0)
++@@ -48,6 +48,6 @@
++ 	}
++ 
++ #define FILTER_OUTPUT_MODIFIABLE(site, output, length, messageEnd)	\
++-	FILTER_OUTPUT2_MODIFIABLE(site, 0, output, length, messageEnd)
+++	FILTER_OUTPUT2_MODIFIABLE(site, ((void)0), output, length, messageEnd)
++ 
++ #endif
++diff -urNad libcrypto++-5.2.1a/hrtimer.cpp /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/hrtimer.cpp
++--- libcrypto++-5.2.1a/hrtimer.cpp	2004-08-18 18:40:08.000000000 +0200
+++++ /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/hrtimer.cpp	2005-02-24 23:39:56.209287280 +0100
++@@ -22,7 +22,7 @@
++ {
++ 	static unsigned long unitsPerSecondTable[] = {1, 1000, 1000*1000, 1000*1000*1000};
++ 
++-	assert(unit < sizeof(unitsPerSecondTable) / sizeof(unitsPerSecondTable[0]));
+++	assert(std::size_t(unit) < sizeof(unitsPerSecondTable) / sizeof(unitsPerSecondTable[0]));
++ 	return (double)t * unitsPerSecondTable[unit] / TicksPerSecond();
++ }
++ 
++diff -urNad libcrypto++-5.2.1a/osrng.cpp /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/osrng.cpp
++--- libcrypto++-5.2.1a/osrng.cpp	2004-08-18 18:40:08.000000000 +0200
+++++ /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/osrng.cpp	2005-02-24 23:42:55.476034592 +0100
++@@ -90,7 +90,8 @@
++ 	if (!CryptGenRandom(m_Provider.GetProviderHandle(), size, output))
++ 		throw OS_RNG_Err("CryptGenRandom");
++ #else
++-	if (read(m_fd, output, size) != size)
+++	if (std::size_t(size) > std::size_t(SSIZE_MAX)
+++		|| read(m_fd, output, size) != ssize_t(size))
++ 		throw OS_RNG_Err("read /dev/urandom");
++ #endif
++ }
++diff -urNad libcrypto++-5.2.1a/socketft.cpp /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/socketft.cpp
++--- libcrypto++-5.2.1a/socketft.cpp	2004-08-18 18:40:08.000000000 +0200
+++++ /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/socketft.cpp	2005-02-24 23:34:53.071371248 +0100
++@@ -99,7 +99,7 @@
++ 	else
++ 	{
++ 		unsigned long result = inet_addr(addr);
++-		if (result == -1)	// Solaris doesn't have INADDR_NONE
+++		if (result == static_cast<unsigned long>(-1))	// Solaris doesn't have INADDR_NONE
++ 		{
++ 			SetLastError(SOCKET_EINVAL);
++ 			CheckAndHandleError_int("inet_addr", SOCKET_ERROR);
++diff -urNad libcrypto++-5.2.1a/validat1.cpp /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/validat1.cpp
++--- libcrypto++-5.2.1a/validat1.cpp	2004-08-20 05:16:20.000000000 +0200
+++++ /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/validat1.cpp	2005-02-24 23:44:06.857183008 +0100
++@@ -971,7 +971,7 @@
++ 	// VC60 workaround: auto_ptr lacks reset()
++ 	member_ptr<ARC4> arc4;
++ 	bool pass=true, fail;
++-	int i;
+++	std::size_t i;
++ 
++ 	cout << "\nARC4 validation suite running...\n\n";
++ 
++diff -urNad libcrypto++-5.2.1a/validat2.cpp /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/validat2.cpp
++--- libcrypto++-5.2.1a/validat2.cpp	2004-08-19 14:32:18.000000000 +0200
+++++ /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/validat2.cpp	2005-02-24 23:44:48.691823176 +0100
++@@ -112,7 +112,7 @@
++ 	cout << "signature key validation\n";
++ 
++ 	const byte *message = (byte *)"test message";
++-	const int messageLen = 12;
+++	const std::size_t messageLen = 12;
++ 
++ 	SecByteBlock signature(priv.MaxSignatureLength());
++ 	unsigned int signatureLength = priv.SignMessage(GlobalRNG(), message, messageLen, signature);
++diff -urNad libcrypto++-5.2.1a/validat3.cpp /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/validat3.cpp
++--- libcrypto++-5.2.1a/validat3.cpp	2004-08-18 18:40:08.000000000 +0200
+++++ /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/validat3.cpp	2005-02-24 23:45:48.747693296 +0100
++@@ -591,7 +591,7 @@
++ 	cout << "\nTwo-Track-MAC validation suite running...\n";
++ 
++ 	TTMAC mac(key, sizeof(key));
++-	for (int k=0; k<sizeof(TestVals)/sizeof(TestVals[0]); k++)
+++	for (std::size_t k=0; k<sizeof(TestVals)/sizeof(TestVals[0]); k++)
++ 	{
++ 		mac.Update((byte *)TestVals[k], strlen(TestVals[k]));
++ 		mac.Final(digest);
++diff -urNad libcrypto++-5.2.1a/zdeflate.cpp /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/zdeflate.cpp
++--- libcrypto++-5.2.1a/zdeflate.cpp	2004-08-18 18:40:08.000000000 +0200
+++++ /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/zdeflate.cpp	2005-02-24 23:47:05.198071072 +0100
++@@ -381,7 +381,7 @@
++ 		if (scan[bestLength-1] == match[bestLength-1] && scan[bestLength] == match[bestLength] && scan[0] == match[0] && scan[1] == match[1])
++ 		{
++ 			assert(scan[2] == match[2]);
++-			unsigned int len = std::mismatch(scan+3, scanEnd, match+3).first - scan;
+++			std::ptrdiff_t len = std::mismatch(scan+3, scanEnd, match+3).first - scan;
++ 			assert(len != bestLength);
++ 			if (len > bestLength)
++ 			{
++diff -urNad libcrypto++-5.2.1a/zinflate.cpp /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/zinflate.cpp
++--- libcrypto++-5.2.1a/zinflate.cpp	2004-08-18 18:40:08.000000000 +0200
+++++ /tmp/dpep.w1yJqn/libcrypto++-5.2.1a/zinflate.cpp	2005-02-24 23:47:43.352270752 +0100
++@@ -135,8 +135,8 @@
++ 	m_normalizedCacheMask = NormalizeCode(m_cacheMask, m_cacheBits);
++ 	assert(m_normalizedCacheMask == BitReverse(m_cacheMask));
++ 
++-	if (m_cache.size() != 1 << m_cacheBits)
++-		m_cache.resize(1 << m_cacheBits);
+++	if (m_cache.size() != 1U << m_cacheBits)
+++		m_cache.resize(1U << m_cacheBits);
++ 
++ 	for (i=0; i<m_cache.size(); i++)
++ 		m_cache[i].type = 0;
+--- libcrypto++-5.2.1c2a.orig/debian/patches/00list
++++ libcrypto++-5.2.1c2a/debian/patches/00list
+@@ -0,0 +1,11 @@
++10_gcc4_compile_fixes
++15_gcc4_template_instantiation_fixes
++20_gcc41_compile_fixes
++25_msc_pragmas
++30_types_and_casts
++50_unused_variables
++60_reorder_member_initialiser
++70_doxygen_backslashes
++75_doxygen_main_link
++80_assertion_unused_variable
++90_cryptest_data_files_location
+--- libcrypto++-5.2.1c2a.orig/debian/patches/15_gcc4_template_instantiation_fixes.dpatch
++++ libcrypto++-5.2.1c2a/debian/patches/15_gcc4_template_instantiation_fixes.dpatch
+@@ -0,0 +1,101 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 15_gcc4_template_instatiation_fixes.dpatch by Jens Peter Secher <jps@debian.org>
++##
++## DP: Avoid problems with template instatiation.
++
++@DPATCH@
++diff -urNad libcrypto++-5.2.1c2~/dll.cpp libcrypto++-5.2.1c2/dll.cpp
++--- libcrypto++-5.2.1c2~/dll.cpp	2005-09-26 20:11:11.000000000 +0200
+++++ libcrypto++-5.2.1c2/dll.cpp	2005-09-26 21:29:24.000000000 +0200
++@@ -1,6 +1,10 @@
++ // dll.cpp - written and placed in the public domain by Wei Dai
++ 
++-#define CRYPTOPP_MANUALLY_INSTANTIATE_TEMPLATES
+++#if defined( __GNUC__ ) && __GNUC__ > 3
+++#	undef CRYPTOPP_MANUALLY_INSTANTIATE_TEMPLATES
+++#else
+++#	define CRYPTOPP_MANUALLY_INSTANTIATE_TEMPLATES
+++#endif
++ #define CRYPTOPP_DEFAULT_NO_DLL
++ 
++ #include "dll.h"
++@@ -37,6 +41,79 @@
++ CRYPTOPP_DLL_TEMPLATE_CLASS AbstractEuclideanDomain<Integer>;
++ #endif
++ 
+++#if defined(__GNUC__) && __GNUC__ > 3
+++template class CRYPTOPP_DLL AbstractEuclideanDomain<Integer>;
+++template class CRYPTOPP_DLL AbstractEuclideanDomain<PolynomialMod2>;
+++template class CRYPTOPP_DLL AbstractGroup<Integer>;
+++template class CRYPTOPP_DLL AbstractGroup<EC2NPoint>;
+++template class CRYPTOPP_DLL AbstractGroup<ECPPoint>;
+++template class CRYPTOPP_DLL AbstractGroup<PolynomialMod2>;
+++template class CRYPTOPP_DLL AbstractPolicyHolder<AdditiveCipherAbstractPolicy, TwoBases<SimpleKeyedTransformation<StreamTransformation>, RandomNumberGenerator> >;
+++template class CRYPTOPP_DLL AbstractRing<Integer>;
+++template class CRYPTOPP_DLL AbstractRing<PolynomialMod2>;
+++template class CRYPTOPP_DLL AdditiveCipherTemplate<>;
+++template class CRYPTOPP_DLL AdditiveCipherTemplate<AbstractPolicyHolder<AdditiveCipherAbstractPolicy, CTR_ModePolicy> >;
+++template class CRYPTOPP_DLL AdditiveCipherTemplate<AbstractPolicyHolder<AdditiveCipherAbstractPolicy, OFB_ModePolicy> >;
+++template class CRYPTOPP_DLL AllocatorWithCleanup<byte>;
+++template class CRYPTOPP_DLL AllocatorWithCleanup<word16>;
+++template class CRYPTOPP_DLL AllocatorWithCleanup<word32>;
+++template class CRYPTOPP_DLL AutoSeededX917RNG<DES_EDE3>;
+++template class CRYPTOPP_DLL CFB_CipherTemplate<AbstractPolicyHolder<CFB_CipherAbstractPolicy, CFB_ModePolicy> >;
+++template class CRYPTOPP_DLL CFB_CipherTemplate<AbstractPolicyHolder<CFB_CipherAbstractPolicy, SymmetricCipher> >;
+++template class CRYPTOPP_DLL CFB_DecryptionTemplate<>;
+++template class CRYPTOPP_DLL CFB_DecryptionTemplate<AbstractPolicyHolder<CFB_CipherAbstractPolicy, CFB_ModePolicy> >;
+++template class CRYPTOPP_DLL CFB_EncryptionTemplate<>;
+++template class CRYPTOPP_DLL CFB_EncryptionTemplate<AbstractPolicyHolder<CFB_CipherAbstractPolicy, CFB_ModePolicy> >;
+++template class CRYPTOPP_DLL CipherModeFinalTemplate_ExternalCipher<CBC_CTS_Decryption>;
+++template class CRYPTOPP_DLL CipherModeFinalTemplate_ExternalCipher<CBC_CTS_Encryption>;
+++template class CRYPTOPP_DLL CipherModeFinalTemplate_ExternalCipher<CBC_Decryption>;
+++template class CRYPTOPP_DLL CipherModeFinalTemplate_ExternalCipher<CBC_Encryption>;
+++template class CRYPTOPP_DLL CipherModeFinalTemplate_ExternalCipher<ECB_OneWay>;
+++template class CRYPTOPP_DLL DH_Domain<DL_GroupParameters_GFP_DefaultSafePrime>;
+++template class CRYPTOPP_DLL DL_Algorithm_GDSA<EC2N::Point>;
+++template class CRYPTOPP_DLL DL_Algorithm_GDSA<ECP::Point>;
+++template class CRYPTOPP_DLL DL_Algorithm_GDSA<Integer>;
+++template class CRYPTOPP_DLL DL_FixedBasePrecomputationImpl<EC2N::Point>;
+++template class CRYPTOPP_DLL DL_FixedBasePrecomputationImpl<ECPPoint>;
+++template class CRYPTOPP_DLL DL_FixedBasePrecomputationImpl<Integer>;
+++template class CRYPTOPP_DLL DL_GroupParameters<Integer>;
+++template class CRYPTOPP_DLL DL_GroupParameters_EC<EC2N>;
+++template class CRYPTOPP_DLL DL_GroupParameters_EC<ECP>;
+++template class CRYPTOPP_DLL DL_GroupParameters_IntegerBasedImpl<ModExpPrecomputation>;
+++template class CRYPTOPP_DLL DL_GroupPrecomputation<EC2N::Point>;
+++template class CRYPTOPP_DLL DL_GroupPrecomputation<ECPPoint>;
+++template class CRYPTOPP_DLL DL_PrivateKeyImpl<DL_GroupParameters_EC<EC2N> >;
+++template class CRYPTOPP_DLL DL_PrivateKeyImpl<DL_GroupParameters_EC<ECP> >;
+++template class CRYPTOPP_DLL DL_PrivateKey_EC<EC2N>;
+++template class CRYPTOPP_DLL DL_PrivateKey_EC<ECP>;
+++template class CRYPTOPP_DLL DL_PrivateKey_GFP<DL_GroupParameters_DSA>;
+++template class CRYPTOPP_DLL DL_PrivateKey_WithSignaturePairwiseConsistencyTest<DL_PrivateKey_EC<EC2N>, ECDSA<EC2N> >;
+++template class CRYPTOPP_DLL DL_PrivateKey_WithSignaturePairwiseConsistencyTest<DL_PrivateKey_EC<ECP>, ECDSA<ECP> >;
+++template class CRYPTOPP_DLL DL_PrivateKey_WithSignaturePairwiseConsistencyTest<DL_PrivateKey_GFP<DL_GroupParameters_DSA>, DSA>;
+++template class CRYPTOPP_DLL DL_PublicKeyImpl<DL_GroupParameters_EC<EC2N> >;
+++template class CRYPTOPP_DLL DL_PublicKeyImpl<DL_GroupParameters_EC<ECP> >;
+++template class CRYPTOPP_DLL DL_PublicKey_EC<EC2N>;
+++template class CRYPTOPP_DLL DL_PublicKey_EC<ECP>;
+++template class CRYPTOPP_DLL DL_PublicKey_GFP<DL_GroupParameters_DSA>;
+++template class CRYPTOPP_DLL EuclideanDomainOf<PolynomialMod2>;
+++template class CRYPTOPP_DLL IteratedHashBase<word32, HashTransformation>;
+++template class CRYPTOPP_DLL IteratedHashBase<word32, MessageAuthenticationCode>;
+++#ifdef WORD64_AVAILABLE
+++template class CRYPTOPP_DLL IteratedHashBase<word64, HashTransformation>;
+++template class CRYPTOPP_DLL IteratedHashBase<word64, MessageAuthenticationCode>;
+++#endif
+++template class CRYPTOPP_DLL OAEP<SHA>;
+++#ifdef CRYPTOPP_IS_DLL
+++template class CRYPTOPP_DLL PKCS_DigestDecoration<SHA>;
+++#endif
+++template class CRYPTOPP_DLL QuotientRing<EuclideanDomainOf<PolynomialMod2> >;
+++template class CRYPTOPP_DLL SimpleKeyedTransformation<BlockTransformation>;
+++template class CRYPTOPP_DLL SimpleKeyedTransformation<HashTransformation>;
+++template class CRYPTOPP_DLL SimpleKeyedTransformation<StreamTransformation>;
+++template class CRYPTOPP_DLL StringSinkTemplate<std::string>;
+++template class CRYPTOPP_DLL TwoBases<SymmetricCipher, RandomNumberGenerator>;
+++#endif // __GNUC__ > 3
+++
++ template<> const byte PKCS_DigestDecoration<SHA>::decoration[] = {0x30,0x21,0x30,0x09,0x06,0x05,0x2B,0x0E,0x03,0x02,0x1A,0x05,0x00,0x04,0x14};
++ template<> const unsigned int PKCS_DigestDecoration<SHA>::length = sizeof(PKCS_DigestDecoration<SHA>::decoration);
++ 
+--- libcrypto++-5.2.1c2a.orig/debian/patches/90_cryptest_data_files_location.dpatch
++++ libcrypto++-5.2.1c2a/debian/patches/90_cryptest_data_files_location.dpatch
+@@ -0,0 +1,462 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 90_cryptest_data_files_location.dpatch by Jens Peter Secher <jps@debian.org>
++##
++## DP: Prefix data file names by PACKAGE_DATA_DIR which is set during build.
++
++@DPATCH@
++diff -urNad --exclude=CVS --exclude=.svn ./bench2.cpp /tmp/dpep-work.dXIwni/libcrypto++-5.2.1c2/bench2.cpp
++--- ./bench2.cpp	2005-08-06 17:47:30.000000000 +0200
+++++ /tmp/dpep-work.dXIwni/libcrypto++-5.2.1c2/bench2.cpp	2005-08-06 17:50:36.963049960 +0200
++@@ -239,48 +239,48 @@
++ 	cout << "<THEAD><TR><TH>Operation<TH>Iterations<TH>Total Time<TH>Milliseconds/Operation" << endl;
++ 
++ 	cout << "<TBODY style=\"background: yellow\">" << endl;
++-	BenchMarkCrypto<RSAES<OAEP<SHA> > >("rsa1024.dat", "RSA 1024", t);
++-	BenchMarkCrypto<RabinES<OAEP<SHA> > >("rabi1024.dat", "Rabin 1024", t);
++-	BenchMarkCrypto<LUCES<OAEP<SHA> > >("luc1024.dat", "LUC 1024", t);
++-	BenchMarkCrypto<DLIES<> >("dlie1024.dat", "DLIES 1024", t);
++-	BenchMarkCrypto<LUC_IES<> >("lucc512.dat", "LUCELG 512", t);
+++	BenchMarkCrypto<RSAES<OAEP<SHA> > >(PACKAGE_DATA_DIR "rsa1024.dat", "RSA 1024", t);
+++	BenchMarkCrypto<RabinES<OAEP<SHA> > >(PACKAGE_DATA_DIR "rabi1024.dat", "Rabin 1024", t);
+++	BenchMarkCrypto<LUCES<OAEP<SHA> > >(PACKAGE_DATA_DIR "luc1024.dat", "LUC 1024", t);
+++	BenchMarkCrypto<DLIES<> >(PACKAGE_DATA_DIR "dlie1024.dat", "DLIES 1024", t);
+++	BenchMarkCrypto<LUC_IES<> >(PACKAGE_DATA_DIR "lucc512.dat", "LUCELG 512", t);
++ 
++ 	cout << "<TBODY style=\"background: white\">" << endl;
++-	BenchMarkCrypto<RSAES<OAEP<SHA> > >("rsa2048.dat", "RSA 2048", t);
++-	BenchMarkCrypto<RabinES<OAEP<SHA> > >("rabi2048.dat", "Rabin 2048", t);
++-	BenchMarkCrypto<LUCES<OAEP<SHA> > >("luc2048.dat", "LUC 2048", t);
++-	BenchMarkCrypto<DLIES<> >("dlie2048.dat", "DLIES 2048", t);
++-	BenchMarkCrypto<LUC_IES<> >("lucc1024.dat", "LUCELG 1024", t);
+++	BenchMarkCrypto<RSAES<OAEP<SHA> > >(PACKAGE_DATA_DIR "rsa2048.dat", "RSA 2048", t);
+++	BenchMarkCrypto<RabinES<OAEP<SHA> > >(PACKAGE_DATA_DIR "rabi2048.dat", "Rabin 2048", t);
+++	BenchMarkCrypto<LUCES<OAEP<SHA> > >(PACKAGE_DATA_DIR "luc2048.dat", "LUC 2048", t);
+++	BenchMarkCrypto<DLIES<> >(PACKAGE_DATA_DIR "dlie2048.dat", "DLIES 2048", t);
+++	BenchMarkCrypto<LUC_IES<> >(PACKAGE_DATA_DIR "lucc1024.dat", "LUCELG 1024", t);
++ 
++ 	cout << "<TBODY style=\"background: yellow\">" << endl;
++-	BenchMarkSignature<RSASS<PSSR, SHA> >("rsa1024.dat", "RSA 1024", t);
++-	BenchMarkSignature<RabinSS<PSSR, SHA> >("rabi1024.dat", "Rabin 1024", t);
++-	BenchMarkSignature<RWSS<PSSR, SHA> >("rw1024.dat", "RW 1024", t);
++-	BenchMarkSignature<LUCSS<PSSR, SHA> >("luc1024.dat", "LUC 1024", t);
++-	BenchMarkSignature<NR<SHA> >("nr1024.dat", "NR 1024", t);
++-	BenchMarkSignature<DSA>("dsa1024.dat", "DSA 1024", t);
++-	BenchMarkSignature<LUC_HMP<SHA> >("lucs512.dat", "LUC-HMP 512", t);
++-	BenchMarkSignature<ESIGN<SHA> >("esig1023.dat", "ESIGN 1023", t);
++-	BenchMarkSignature<ESIGN<SHA> >("esig1536.dat", "ESIGN 1536", t);
+++	BenchMarkSignature<RSASS<PSSR, SHA> >(PACKAGE_DATA_DIR "rsa1024.dat", "RSA 1024", t);
+++	BenchMarkSignature<RabinSS<PSSR, SHA> >(PACKAGE_DATA_DIR "rabi1024.dat", "Rabin 1024", t);
+++	BenchMarkSignature<RWSS<PSSR, SHA> >(PACKAGE_DATA_DIR "rw1024.dat", "RW 1024", t);
+++	BenchMarkSignature<LUCSS<PSSR, SHA> >(PACKAGE_DATA_DIR "luc1024.dat", "LUC 1024", t);
+++	BenchMarkSignature<NR<SHA> >(PACKAGE_DATA_DIR "nr1024.dat", "NR 1024", t);
+++	BenchMarkSignature<DSA>(PACKAGE_DATA_DIR "dsa1024.dat", "DSA 1024", t);
+++	BenchMarkSignature<LUC_HMP<SHA> >(PACKAGE_DATA_DIR "lucs512.dat", "LUC-HMP 512", t);
+++	BenchMarkSignature<ESIGN<SHA> >(PACKAGE_DATA_DIR "esig1023.dat", "ESIGN 1023", t);
+++	BenchMarkSignature<ESIGN<SHA> >(PACKAGE_DATA_DIR "esig1536.dat", "ESIGN 1536", t);
++ 
++ 	cout << "<TBODY style=\"background: white\">" << endl;
++-	BenchMarkSignature<RSASS<PSSR, SHA> >("rsa2048.dat", "RSA 2048", t);
++-	BenchMarkSignature<RabinSS<PSSR, SHA> >("rabi2048.dat", "Rabin 2048", t);
++-	BenchMarkSignature<RWSS<PSSR, SHA> >("rw2048.dat", "RW 2048", t);
++-	BenchMarkSignature<LUCSS<PSSR, SHA> >("luc2048.dat", "LUC 2048", t);
++-	BenchMarkSignature<NR<SHA> >("nr2048.dat", "NR 2048", t);
++-	BenchMarkSignature<LUC_HMP<SHA> >("lucs1024.dat", "LUC-HMP 1024", t);
++-	BenchMarkSignature<ESIGN<SHA> >("esig2046.dat", "ESIGN 2046", t);
+++	BenchMarkSignature<RSASS<PSSR, SHA> >(PACKAGE_DATA_DIR "rsa2048.dat", "RSA 2048", t);
+++	BenchMarkSignature<RabinSS<PSSR, SHA> >(PACKAGE_DATA_DIR "rabi2048.dat", "Rabin 2048", t);
+++	BenchMarkSignature<RWSS<PSSR, SHA> >(PACKAGE_DATA_DIR "rw2048.dat", "RW 2048", t);
+++	BenchMarkSignature<LUCSS<PSSR, SHA> >(PACKAGE_DATA_DIR "luc2048.dat", "LUC 2048", t);
+++	BenchMarkSignature<NR<SHA> >(PACKAGE_DATA_DIR "nr2048.dat", "NR 2048", t);
+++	BenchMarkSignature<LUC_HMP<SHA> >(PACKAGE_DATA_DIR "lucs1024.dat", "LUC-HMP 1024", t);
+++	BenchMarkSignature<ESIGN<SHA> >(PACKAGE_DATA_DIR "esig2046.dat", "ESIGN 2046", t);
++ 
++ 	cout << "<TBODY style=\"background: yellow\">" << endl;
++-	BenchMarkKeyAgreement<XTR_DH>("xtrdh171.dat", "XTR-DH 171", t);
++-	BenchMarkKeyAgreement<XTR_DH>("xtrdh342.dat", "XTR-DH 342", t);
++-	BenchMarkKeyAgreement<DH>("dh1024.dat", "DH 1024", t);
++-	BenchMarkKeyAgreement<DH>("dh2048.dat", "DH 2048", t);
++-	BenchMarkKeyAgreement<LUC_DH>("lucd512.dat", "LUCDIF 512", t);
++-	BenchMarkKeyAgreement<LUC_DH>("lucd1024.dat", "LUCDIF 1024", t);
++-	BenchMarkKeyAgreement<MQV>("mqv1024.dat", "MQV 1024", t);
++-	BenchMarkKeyAgreement<MQV>("mqv2048.dat", "MQV 2048", t);
+++	BenchMarkKeyAgreement<XTR_DH>(PACKAGE_DATA_DIR "xtrdh171.dat", "XTR-DH 171", t);
+++	BenchMarkKeyAgreement<XTR_DH>(PACKAGE_DATA_DIR "xtrdh342.dat", "XTR-DH 342", t);
+++	BenchMarkKeyAgreement<DH>(PACKAGE_DATA_DIR "dh1024.dat", "DH 1024", t);
+++	BenchMarkKeyAgreement<DH>(PACKAGE_DATA_DIR "dh2048.dat", "DH 2048", t);
+++	BenchMarkKeyAgreement<LUC_DH>(PACKAGE_DATA_DIR "lucd512.dat", "LUCDIF 512", t);
+++	BenchMarkKeyAgreement<LUC_DH>(PACKAGE_DATA_DIR "lucd1024.dat", "LUCDIF 1024", t);
+++	BenchMarkKeyAgreement<MQV>(PACKAGE_DATA_DIR "mqv1024.dat", "MQV 1024", t);
+++	BenchMarkKeyAgreement<MQV>(PACKAGE_DATA_DIR "mqv2048.dat", "MQV 2048", t);
++ 
++ 	cout << "<TBODY style=\"background: white\">" << endl;
++ 	{
++diff -urNad --exclude=CVS --exclude=.svn ./test.cpp /tmp/dpep-work.dXIwni/libcrypto++-5.2.1c2/test.cpp
++--- ./test.cpp	2005-08-06 17:47:30.000000000 +0200
+++++ /tmp/dpep-work.dXIwni/libcrypto++-5.2.1c2/test.cpp	2005-08-06 17:51:45.166681432 +0200
++@@ -291,7 +291,7 @@
++ 			AES_CTR_Encrypt(argv[2], argv[3], argv[4], argv[5]);
++ 		else if (command == "h")
++ 		{
++-			FileSource usage("usage.dat", true, new FileSink(cout));
+++			FileSource usage(PACKAGE_DATA_DIR "usage.dat", true, new FileSink(cout));
++ 			return 1;
++ 		}
++ 		else
++diff -urNad --exclude=CVS --exclude=.svn ./validat1.cpp /tmp/dpep-work.dXIwni/libcrypto++-5.2.1c2/validat1.cpp
++--- ./validat1.cpp	2005-08-06 17:49:30.973081960 +0200
+++++ /tmp/dpep-work.dXIwni/libcrypto++-5.2.1c2/validat1.cpp	2005-08-06 17:50:59.772582384 +0200
++@@ -463,12 +463,12 @@
++ {
++ 	cout << "\nDES validation suite running...\n\n";
++ 
++-	FileSource valdata("descert.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "descert.dat", true, new HexDecoder);
++ 	bool pass = BlockTransformationTest(FixedRoundsCipherFactory<DESEncryption, DESDecryption>(), valdata);
++ 
++ 	cout << "\nTesting EDE2, EDE3, and XEX3 variants...\n\n";
++ 
++-	FileSource valdata1("3desval.dat", true, new HexDecoder);
+++	FileSource valdata1(PACKAGE_DATA_DIR "3desval.dat", true, new HexDecoder);
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<DES_EDE2_Encryption, DES_EDE2_Decryption>(), valdata1, 1) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<DES_EDE3_Encryption, DES_EDE3_Decryption>(), valdata1, 1) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<DES_XEX3_Encryption, DES_XEX3_Decryption>(), valdata1, 1) && pass;
++@@ -784,7 +784,7 @@
++ {
++ 	cout << "\nIDEA validation suite running...\n\n";
++ 
++-	FileSource valdata("ideaval.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "ideaval.dat", true, new HexDecoder);
++ 	return BlockTransformationTest(FixedRoundsCipherFactory<IDEAEncryption, IDEADecryption>(), valdata);
++ }
++ 
++@@ -792,7 +792,7 @@
++ {
++ 	cout << "\nSAFER validation suite running...\n\n";
++ 
++-	FileSource valdata("saferval.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "saferval.dat", true, new HexDecoder);
++ 	bool pass = true;
++ 	pass = BlockTransformationTest(VariableRoundsCipherFactory<SAFER_K_Encryption, SAFER_K_Decryption>(8,6), valdata, 4) && pass;
++ 	pass = BlockTransformationTest(VariableRoundsCipherFactory<SAFER_K_Encryption, SAFER_K_Decryption>(16,12), valdata, 4) && pass;
++@@ -805,7 +805,7 @@
++ {
++ 	cout << "\nRC2 validation suite running...\n\n";
++ 
++-	FileSource valdata("rc2val.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "rc2val.dat", true, new HexDecoder);
++ 	HexEncoder output(new FileSink(cout));
++ 	SecByteBlock plain(RC2Encryption::BLOCKSIZE), cipher(RC2Encryption::BLOCKSIZE), out(RC2Encryption::BLOCKSIZE), outplain(RC2Encryption::BLOCKSIZE);
++ 	SecByteBlock key(128);
++@@ -1015,7 +1015,7 @@
++ {
++ 	cout << "\nRC5 validation suite running...\n\n";
++ 
++-	FileSource valdata("rc5val.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "rc5val.dat", true, new HexDecoder);
++ 	return BlockTransformationTest(VariableRoundsCipherFactory<RC5Encryption, RC5Decryption>(16, 12), valdata);
++ }
++ 
++@@ -1023,7 +1023,7 @@
++ {
++ 	cout << "\nRC6 validation suite running...\n\n";
++ 
++-	FileSource valdata("rc6val.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "rc6val.dat", true, new HexDecoder);
++ 	bool pass = true;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<RC6Encryption, RC6Decryption>(16), valdata, 2) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<RC6Encryption, RC6Decryption>(24), valdata, 2) && pass;
++@@ -1035,7 +1035,7 @@
++ {
++ 	cout << "\nMARS validation suite running...\n\n";
++ 
++-	FileSource valdata("marsval.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "marsval.dat", true, new HexDecoder);
++ 	bool pass = true;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<MARSEncryption, MARSDecryption>(16), valdata, 4) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<MARSEncryption, MARSDecryption>(24), valdata, 3) && pass;
++@@ -1047,7 +1047,7 @@
++ {
++ 	cout << "\nRijndael validation suite running...\n\n";
++ 
++-	FileSource valdata("rijndael.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "rijndael.dat", true, new HexDecoder);
++ 	bool pass = true;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<RijndaelEncryption, RijndaelDecryption>(16), valdata, 4) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<RijndaelEncryption, RijndaelDecryption>(24), valdata, 3) && pass;
++@@ -1059,7 +1059,7 @@
++ {
++ 	cout << "\nTwofish validation suite running...\n\n";
++ 
++-	FileSource valdata("twofishv.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "twofishv.dat", true, new HexDecoder);
++ 	bool pass = true;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<TwofishEncryption, TwofishDecryption>(16), valdata, 4) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<TwofishEncryption, TwofishDecryption>(24), valdata, 3) && pass;
++@@ -1071,7 +1071,7 @@
++ {
++ 	cout << "\nSerpent validation suite running...\n\n";
++ 
++-	FileSource valdata("serpentv.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "serpentv.dat", true, new HexDecoder);
++ 	bool pass = true;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<SerpentEncryption, SerpentDecryption>(16), valdata, 4) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<SerpentEncryption, SerpentDecryption>(24), valdata, 3) && pass;
++@@ -1117,7 +1117,7 @@
++ {
++ 	cout << "\n3-WAY validation suite running...\n\n";
++ 
++-	FileSource valdata("3wayval.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "3wayval.dat", true, new HexDecoder);
++ 	return BlockTransformationTest(FixedRoundsCipherFactory<ThreeWayEncryption, ThreeWayDecryption>(), valdata);
++ }
++ 
++@@ -1125,7 +1125,7 @@
++ {
++ 	cout << "\nGOST validation suite running...\n\n";
++ 
++-	FileSource valdata("gostval.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "gostval.dat", true, new HexDecoder);
++ 	return BlockTransformationTest(FixedRoundsCipherFactory<GOSTEncryption, GOSTDecryption>(), valdata);
++ }
++ 
++@@ -1134,7 +1134,7 @@
++ 	cout << "\nSHARK validation suite running...\n\n";
++ 
++ #ifdef WORD64_AVAILABLE
++-	FileSource valdata("sharkval.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "sharkval.dat", true, new HexDecoder);
++ 	return BlockTransformationTest(FixedRoundsCipherFactory<SHARKEncryption, SHARKDecryption>(), valdata);
++ #else
++ 	cout << "word64 not available, skipping SHARK validation." << endl;
++@@ -1148,14 +1148,14 @@
++ 
++ 	cout << "\nCAST-128 validation suite running...\n\n";
++ 
++-	FileSource val128("cast128v.dat", true, new HexDecoder);
+++	FileSource val128(PACKAGE_DATA_DIR "cast128v.dat", true, new HexDecoder);
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<CAST128Encryption, CAST128Decryption>(16), val128, 1) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<CAST128Encryption, CAST128Decryption>(10), val128, 1) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<CAST128Encryption, CAST128Decryption>(5), val128, 1) && pass;
++ 
++ 	cout << "\nCAST-256 validation suite running...\n\n";
++ 
++-	FileSource val256("cast256v.dat", true, new HexDecoder);
+++	FileSource val256(PACKAGE_DATA_DIR "cast256v.dat", true, new HexDecoder);
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<CAST256Encryption, CAST256Decryption>(16), val256, 1) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<CAST256Encryption, CAST256Decryption>(24), val256, 1) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<CAST256Encryption, CAST256Decryption>(32), val256, 1) && pass;
++@@ -1167,7 +1167,7 @@
++ {
++ 	cout << "\nSquare validation suite running...\n\n";
++ 
++-	FileSource valdata("squareva.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "squareva.dat", true, new HexDecoder);
++ 	return BlockTransformationTest(FixedRoundsCipherFactory<SquareEncryption, SquareDecryption>(), valdata);
++ }
++ 
++@@ -1175,7 +1175,7 @@
++ {
++ 	cout << "\nSKIPJACK validation suite running...\n\n";
++ 
++-	FileSource valdata("skipjack.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "skipjack.dat", true, new HexDecoder);
++ 	return BlockTransformationTest(FixedRoundsCipherFactory<SKIPJACKEncryption, SKIPJACKDecryption>(), valdata);
++ }
++ 
++@@ -1279,7 +1279,7 @@
++ 	cout << "\nSHACAL-2 validation suite running...\n\n";
++ 
++ 	bool pass = true;
++-	FileSource valdata("shacal2v.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "shacal2v.dat", true, new HexDecoder);
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<SHACAL2Encryption, SHACAL2Decryption>(16), valdata, 4) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<SHACAL2Encryption, SHACAL2Decryption>(64), valdata, 10) && pass;
++ 	return pass;
++@@ -1291,7 +1291,7 @@
++ 
++ #ifdef WORD64_AVAILABLE
++ 	bool pass = true;
++-	FileSource valdata("camellia.dat", true, new HexDecoder);
+++	FileSource valdata(PACKAGE_DATA_DIR "camellia.dat", true, new HexDecoder);
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<CamelliaEncryption, CamelliaDecryption>(16), valdata, 15) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<CamelliaEncryption, CamelliaDecryption>(24), valdata, 15) && pass;
++ 	pass = BlockTransformationTest(FixedRoundsCipherFactory<CamelliaEncryption, CamelliaDecryption>(32), valdata, 15) && pass;
++diff -urNad --exclude=CVS --exclude=.svn ./validat2.cpp /tmp/dpep-work.dXIwni/libcrypto++-5.2.1c2/validat2.cpp
++--- ./validat2.cpp	2005-08-06 17:49:30.975081656 +0200
+++++ /tmp/dpep-work.dXIwni/libcrypto++-5.2.1c2/validat2.cpp	2005-08-06 17:51:12.978574768 +0200
++@@ -269,7 +269,7 @@
++ 			"\x69\x94\xac\x04\xf3\x41\xb5\x7d\x05\x20\x2d\x42\x8f\xb2\xa2\x7b"
++ 			"\x5c\x77\xdf\xd9\xb1\x5b\xfc\x3d\x55\x93\x53\x50\x34\x10\xc1\xe1";
++ 
++-		FileSource keys("rsa512a.dat", true, new HexDecoder);
+++		FileSource keys(PACKAGE_DATA_DIR "rsa512a.dat", true, new HexDecoder);
++ 		RSASSA_PKCS1v15_MD2_Signer rsaPriv(keys);
++ 		RSASSA_PKCS1v15_MD2_Verifier rsaPub(rsaPriv);
++ 
++@@ -294,7 +294,7 @@
++ 		cout << "invalid signature verification\n";
++ 	}
++ 	{
++-		FileSource keys("rsa1024.dat", true, new HexDecoder);
+++		FileSource keys(PACKAGE_DATA_DIR "rsa1024.dat", true, new HexDecoder);
++ 		RSAES_PKCS1v15_Decryptor rsaPriv(keys);
++ 		RSAES_PKCS1v15_Encryptor rsaPub(rsaPriv);
++ 
++@@ -315,8 +315,8 @@
++ 		bq.Put(oaepSeed, 20);
++ 		FixedRNG rng(bq);
++ 
++-		FileSource privFile("rsa400pv.dat", true, new HexDecoder);
++-		FileSource pubFile("rsa400pb.dat", true, new HexDecoder);
+++		FileSource privFile(PACKAGE_DATA_DIR "rsa400pv.dat", true, new HexDecoder);
+++		FileSource pubFile(PACKAGE_DATA_DIR "rsa400pb.dat", true, new HexDecoder);
++ 		RSAES_OAEP_SHA_Decryptor rsaPriv;
++ 		rsaPriv.AccessKey().BERDecodeKey(privFile);
++ 		RSAES_OAEP_SHA_Encryptor rsaPub(pubFile);
++@@ -339,7 +339,7 @@
++ {
++ 	cout << "\nDH validation suite running...\n\n";
++ 
++-	FileSource f("dh1024.dat", true, new HexDecoder());
+++	FileSource f(PACKAGE_DATA_DIR "dh1024.dat", true, new HexDecoder());
++ 	DH dh(f);
++ 	return SimpleKeyAgreementValidate(dh);
++ }
++@@ -348,7 +348,7 @@
++ {
++ 	cout << "\nMQV validation suite running...\n\n";
++ 
++-	FileSource f("mqv1024.dat", true, new HexDecoder());
+++	FileSource f(PACKAGE_DATA_DIR "mqv1024.dat", true, new HexDecoder());
++ 	MQV mqv(f);
++ 	return AuthenticatedKeyAgreementValidate(mqv);
++ }
++@@ -357,7 +357,7 @@
++ {
++ 	cout << "\nLUC-DH validation suite running...\n\n";
++ 
++-	FileSource f("lucd512.dat", true, new HexDecoder());
+++	FileSource f(PACKAGE_DATA_DIR "lucd512.dat", true, new HexDecoder());
++ 	LUC_DH dh(f);
++ 	return SimpleKeyAgreementValidate(dh);
++ }
++@@ -366,7 +366,7 @@
++ {
++ 	cout << "\nXTR-DH validation suite running...\n\n";
++ 
++-	FileSource f("xtrdh171.dat", true, new HexDecoder());
+++	FileSource f(PACKAGE_DATA_DIR "xtrdh171.dat", true, new HexDecoder());
++ 	XTR_DH dh(f);
++ 	return SimpleKeyAgreementValidate(dh);
++ }
++@@ -376,7 +376,7 @@
++ 	cout << "\nElGamal validation suite running...\n\n";
++ 	bool pass = true;
++ 	{
++-		FileSource fc("elgc1024.dat", true, new HexDecoder);
+++		FileSource fc(PACKAGE_DATA_DIR "elgc1024.dat", true, new HexDecoder);
++ 		ElGamalDecryptor privC(fc);
++ 		ElGamalEncryptor pubC(privC);
++ 		privC.AccessKey().Precompute();
++@@ -394,7 +394,7 @@
++ 	cout << "\nDLIES validation suite running...\n\n";
++ 	bool pass = true;
++ 	{
++-		FileSource fc("dlie1024.dat", true, new HexDecoder);
+++		FileSource fc(PACKAGE_DATA_DIR "dlie1024.dat", true, new HexDecoder);
++ 		DLIES<>::Decryptor privC(fc);
++ 		DLIES<>::Encryptor pubC(privC);
++ 		pass = CryptoSystemValidate(privC, pubC) && pass;
++@@ -417,7 +417,7 @@
++ 	cout << "\nNR validation suite running...\n\n";
++ 	bool pass = true;
++ 	{
++-		FileSource f("nr2048.dat", true, new HexDecoder);
+++		FileSource f(PACKAGE_DATA_DIR "nr2048.dat", true, new HexDecoder);
++ 		NR<SHA>::Signer privS(f);
++ 		privS.AccessKey().Precompute();
++ 		NR<SHA>::Verifier pubS(privS);
++@@ -440,7 +440,7 @@
++ 
++ 	bool pass = true, fail;
++ 	{
++-	FileSource fs("dsa512.dat", true, new HexDecoder());
+++	FileSource fs(PACKAGE_DATA_DIR "dsa512.dat", true, new HexDecoder());
++ 	GDSA<SHA>::Signer priv(fs);
++ 	priv.AccessKey().Precompute(16);
++ 	GDSA<SHA>::Verifier pub(priv);
++@@ -482,10 +482,10 @@
++ 	fail = pub.VerifyMessage((byte *)"xyz", 3, sig, sizeof(sig));
++ 	pass = pass && !fail;
++ 	}
++-	FileSource fs1("dsa1024.dat", true, new HexDecoder());
+++	FileSource fs1(PACKAGE_DATA_DIR "dsa1024.dat", true, new HexDecoder());
++ 	DSA::Signer priv(fs1);
++ 	DSA::Verifier pub(priv);
++-	FileSource fs2("dsa1024b.dat", true, new HexDecoder());
+++	FileSource fs2(PACKAGE_DATA_DIR "dsa1024b.dat", true, new HexDecoder());
++ 	DSA::Verifier pub1(fs2);
++ 	assert(pub.GetKey() == pub1.GetKey());
++ 	pass = SignatureValidate(priv, pub, thorough) && pass;
++@@ -498,7 +498,7 @@
++ 	bool pass=true;
++ 
++ 	{
++-		FileSource f("luc1024.dat", true, new HexDecoder);
+++		FileSource f(PACKAGE_DATA_DIR "luc1024.dat", true, new HexDecoder);
++ 		LUCSSA_PKCS1v15_SHA_Signer priv(f);
++ 		LUCSSA_PKCS1v15_SHA_Verifier pub(priv);
++ 		pass = SignatureValidate(priv, pub) && pass;
++@@ -515,14 +515,14 @@
++ {
++ 	cout << "\nLUC-HMP validation suite running...\n\n";
++ 
++-	FileSource f("lucs512.dat", true, new HexDecoder);
+++	FileSource f(PACKAGE_DATA_DIR "lucs512.dat", true, new HexDecoder);
++ 	LUC_HMP<SHA>::Signer privS(f);
++ 	LUC_HMP<SHA>::Verifier pubS(privS);
++ 	bool pass = SignatureValidate(privS, pubS);
++ 
++ 	cout << "\nLUC-IES validation suite running...\n\n";
++ 
++-	FileSource fc("lucc512.dat", true, new HexDecoder);
+++	FileSource fc(PACKAGE_DATA_DIR "lucc512.dat", true, new HexDecoder);
++ 	LUC_IES<>::Decryptor privC(fc);
++ 	LUC_IES<>::Encryptor pubC(privC);
++ 	pass = CryptoSystemValidate(privC, pubC) && pass;
++@@ -536,7 +536,7 @@
++ 	bool pass=true;
++ 
++ 	{
++-		FileSource f("rabi1024.dat", true, new HexDecoder);
+++		FileSource f(PACKAGE_DATA_DIR "rabi1024.dat", true, new HexDecoder);
++ 		RabinSS<PSSR, SHA>::Signer priv(f);
++ 		RabinSS<PSSR, SHA>::Verifier pub(priv);
++ 		pass = SignatureValidate(priv, pub) && pass;
++@@ -553,7 +553,7 @@
++ {
++ 	cout << "\nRW validation suite running...\n\n";
++ 
++-	FileSource f("rw1024.dat", true, new HexDecoder);
+++	FileSource f(PACKAGE_DATA_DIR "rw1024.dat", true, new HexDecoder);
++ 	RWSS<PSSR, SHA>::Signer priv(f);
++ 	RWSS<PSSR, SHA>::Verifier pub(priv);
++ 
++@@ -565,7 +565,7 @@
++ {
++ 	cout << "\nBlumGoldwasser validation suite running...\n\n";
++ 
++-	FileSource f("blum512.dat", true, new HexDecoder);
+++	FileSource f(PACKAGE_DATA_DIR "blum512.dat", true, new HexDecoder);
++ 	BlumGoldwasserPrivateKey priv(f);
++ 	BlumGoldwasserPublicKey pub(priv);
++ 
++@@ -735,7 +735,7 @@
++ 		"\x74\x02\x37\x0E\xED\x0A\x06\xAD\xF4\x15\x65\xB8\xE1\xD1\x45\xAE\x39\x19\xB4\xFF\x5D\xF1\x45\x7B\xE0\xFE\x72\xED\x11\x92\x8F\x61\x41\x4F\x02\x00\xF2\x76\x6F\x7C"
++ 		"\x79\xA2\xE5\x52\x20\x5D\x97\x5E\xFE\x39\xAE\x21\x10\xFB\x35\xF4\x80\x81\x41\x13\xDD\xE8\x5F\xCA\x1E\x4F\xF8\x9B\xB2\x68\xFB\x28";
++ 
++-	FileSource keys("esig1536.dat", true, new HexDecoder);
+++	FileSource keys(PACKAGE_DATA_DIR "esig1536.dat", true, new HexDecoder);
++ 	ESIGN<SHA>::Signer signer(keys);
++ 	ESIGN<SHA>::Verifier verifier(signer);
++ 
+--- libcrypto++-5.2.1c2a.orig/debian/patches/25_msc_pragmas.dpatch
++++ libcrypto++-5.2.1c2a/debian/patches/25_msc_pragmas.dpatch
+@@ -0,0 +1,19 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 25_msc_pragmas.dpatch by Ben Hutchings <ben@decadentplace.org.uk>
++##
++## DP: Disabled use of MSC pragma.
++
++@DPATCH@
++diff -urNad libcrypto++-5.2.1a/dll.cpp /tmp/dpep.cFWS1h/libcrypto++-5.2.1a/dll.cpp
++--- libcrypto++-5.2.1a/dll.cpp	2004-08-18 18:40:08.000000000 +0200
+++++ /tmp/dpep.cFWS1h/libcrypto++-5.2.1a/dll.cpp	2005-02-24 23:20:41.824780400 +0100
++@@ -4,7 +4,9 @@
++ #define CRYPTOPP_DEFAULT_NO_DLL
++ 
++ #include "dll.h"
+++#ifdef _MSC_VER
++ #pragma warning(default: 4660)
+++#endif
++ 
++ #ifdef CRYPTOPP_WIN32_AVAILABLE
++ #include <windows.h>
+--- libcrypto++-5.2.1c2a.orig/debian/patches/70_doxygen_backslashes.dpatch
++++ libcrypto++-5.2.1c2a/debian/patches/70_doxygen_backslashes.dpatch
+@@ -0,0 +1,18 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 70_doxygen_backslashes.dpatch by Ben Hutchings <ben@decadentplace.org.uk>
++##
++## DP: Fix use of backslash in a Doxygen comment.
++
++@DPATCH@
++diff -urNad libcrypto++-5.2.1a/mqueue.h /tmp/dpep.sapt7v/libcrypto++-5.2.1a/mqueue.h
++--- libcrypto++-5.2.1a/mqueue.h	2004-08-20 14:58:33.000000000 +0200
+++++ /tmp/dpep.sapt7v/libcrypto++-5.2.1a/mqueue.h	2005-02-25 00:07:18.874564200 +0100
++@@ -67,7 +67,7 @@
++ public:
++ 	struct MismatchDetected : public Exception {MismatchDetected() : Exception(DATA_INTEGRITY_CHECK_FAILED, "EqualityComparisonFilter: did not receive the same data on two channels") {}};
++ 
++-	/*! if throwIfNotEqual is false, this filter will output a '\0' byte when it detects a mismatch, '\1' otherwise */
+++	/*! if throwIfNotEqual is false, this filter will output a '\\0' byte when it detects a mismatch, '\\1' otherwise */
++ 	EqualityComparisonFilter(BufferedTransformation *attachment=NULL, bool throwIfNotEqual=true, const std::string &firstChannel="0", const std::string &secondChannel="1")
++ 		: m_throwIfNotEqual(throwIfNotEqual), m_mismatchDetected(false)
++ 		, m_firstChannel(firstChannel), m_secondChannel(secondChannel)
+--- libcrypto++-5.2.1c2a.orig/debian/copyright
++++ libcrypto++-5.2.1c2a/debian/copyright
+@@ -0,0 +1,106 @@
++This is the Debian GNU/Linux version of the libcrypto++ library.
++
++The original source is cryptopp521.zip with md5sum
++82a00c44235ccbae2bedf9cb16c40ac3 obtained from
++http://www.eskimo.com/~weidai/cryptlib.html.  It was unpacked with
++unzip -a to avoid DOS text format which breaks the test suite.
++
++---[ License.txt begin ]---
++
++Compilation Copyright (c) 1995-2004 by Wei Dai.  All rights reserved.
++This copyright applies only to this software distribution package 
++as a compilation, and does not imply a copyright on any particular 
++file in the package.
++
++The following files are copyrighted by their respective original authors,
++and their use is subject to additional licenses included in these files.
++
++mars.cpp - Copyright 1998 Brian Gladman.
++
++All other files in this compilation are placed in the public domain by
++Wei Dai and other contributors.
++
++I would like to thank the following authors for placing their works into
++the public domain:
++
++Joan Daemen - 3way.cpp
++Leonard Janke - cast.cpp, seal.cpp
++Steve Reid - cast.cpp
++Phil Karn - des.cpp
++Michael Paul Johnson - diamond.cpp
++Andrew M. Kuchling - md2.cpp, md4.cpp
++Colin Plumb - md5.cpp, md5mac.cpp
++Seal Woods - rc6.cpp
++Chris Morgan - rijndael.cpp
++Paulo Baretto - rijndael.cpp, skipjack.cpp, square.cpp
++Richard De Moliner - safer.cpp
++Matthew Skala - twofish.cpp
++Kevin Springle - camellia.cpp, shacal2.cpp, ttmac.cpp, whrlpool.cpp, ripemd.cpp
++
++Permission to use, copy, modify, and distribute this compilation for
++any purpose, including commercial applications, is hereby granted
++without fee, subject to the following restrictions:
++
++1. Any copy or modification of this compilation in any form, except
++in object code form as part of an application software, must include
++the above copyright notice and this license.
++
++2. Users of this software agree that any modification or extension
++they provide to Wei Dai will be considered public domain and not
++copyrighted unless it includes an explicit copyright notice.
++
++3. Wei Dai makes no warranty or representation that the operation of the
++software in this compilation will be error-free, and Wei Dai is under no
++obligation to provide any services, by way of maintenance, update, or
++otherwise.  THE SOFTWARE AND ANY DOCUMENTATION ARE PROVIDED "AS IS"
++WITHOUT EXPRESS OR IMPLIED WARRANTY INCLUDING, BUT NOT LIMITED TO,
++THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++PURPOSE. IN NO EVENT WILL WEI DAI OR ANY OTHER CONTRIBUTOR BE LIABLE FOR
++DIRECT, INCIDENTAL OR CONSEQUENTIAL DAMAGES, EVEN IF
++ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
++
++4. Users will not use Wei Dai or any other contributor's name in any 
++publicity or advertising, without prior written consent in each case.
++
++5. Export of this software from the United States may require a
++specific license from the United States Government.  It is the
++responsibility of any person or organization contemplating export
++to obtain such a license before exporting.
++
++6. Certain parts of this software may be protected by patents.  It
++is the users' responsibility to obtain the appropriate
++licenses before using those parts.
++
++If this compilation is used in object code form in an application
++software, acknowledgement of the author is not required but would be
++appreciated. The contribution of any useful modifications or extensions
++to Wei Dai is not required but would also be appreciated.
++
++---[ License.txt end ]---
++
++Debian specific changes are copyright 
++(c) 2000-2002 Stephen Zander <gibreel@debian.org>,
++(c) 2004 Pierre Machard <pmachard@debian.org>,
++(c) 2005 Jens Peter Secher <jps@debian.org>,
++licensed under the same the same terms as the rest of the Crypto++ package.
++
++---[ From mars.cpp begin ]---
++
++// mars.cpp - modified by Sean Woods from Brian Gladman's mars6.c for Crypto++
++// key setup updated by Wei Dai to reflect IBM's "tweak" proposed in August 1999
++
++/* This is an independent implementation of the MARS encryption         */
++/* algorithm designed by a team at IBM as a candidate for the US        */
++/* NIST Advanced Encryption Standard (AES) effort. The algorithm        */
++/* is subject to Patent action by IBM, who intend to offer royalty      */
++/* free use if a Patent is granted.                                     */
++/*                                                                      */
++/* Copyright in this implementation is held by Dr B R Gladman but       */
++/* I hereby give permission for its free direct or derivative use       */
++/* subject to acknowledgment of its origin and compliance with any      */
++/* constraints that IBM place on the use of the MARS algorithm.         */
++/*                                                                      */
++/* Dr Brian Gladman (gladman@seven77.demon.co.uk) 4th October 1998      */
++
++---[ From mars.cpp end ]---
++
+--- libcrypto++-5.2.1c2a.orig/debian/libcrypto++5.2c2a.install
++++ libcrypto++-5.2.1c2a/debian/libcrypto++5.2c2a.install
+@@ -0,0 +1 @@
++usr/lib/*.so.*
